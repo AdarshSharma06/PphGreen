@@ -34,7 +34,8 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "https://pph-green.vercel.app"
+                "https://pph-green.vercel.app",
+                "https://pph-green-gi08b6eu4-adarsh-2f99.vercel.app"
         ));
 
         configuration.setAllowedMethods(List.of(
