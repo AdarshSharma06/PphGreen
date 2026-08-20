@@ -55,14 +55,16 @@ public class EventService {
         Event event = new Event();
         applyRequest(event, request);
         event.setCreatedBy(creator);
-        return toResponse(eventRepository.save(event));
+        Event saved = eventRepository.save(event);
+        return toResponse(findEvent(saved.getId()));
     }
 
     public EventResponse updateEvent(Long id, EventRequest request, String actorEmail) {
         adminUser(actorEmail);
         Event event = findEvent(id);
         applyRequest(event, request);
-        return toResponse(eventRepository.save(event));
+        eventRepository.save(event);
+        return toResponse(findEvent(id));
     }
 
     public void deleteEvent(Long id, String actorEmail) {

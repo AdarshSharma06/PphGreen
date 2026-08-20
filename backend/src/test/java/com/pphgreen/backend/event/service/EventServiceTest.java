@@ -49,7 +49,13 @@ class EventServiceTest {
     void createEventByAdminUsesAuthenticatedUserAsCreator() {
         User admin = adminUser();
         when(userService.findByEmail("admin@example.com")).thenReturn(Optional.of(admin));
-        when(eventRepository.save(any(Event.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(eventRepository.save(any(Event.class))).thenAnswer(invocation -> {
+            Event e = invocation.getArgument(0);
+            e.setId(10L);
+            return e;
+        });
+        when(eventRepository.findWithCreatedBy(10L))
+                .thenAnswer(invocation -> Optional.of(eventRepositoryCaptured()));
 
         EventResponse response = eventService.createEvent(request(), "admin@example.com");
 
