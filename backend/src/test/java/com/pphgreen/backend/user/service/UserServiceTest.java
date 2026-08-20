@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.pphgreen.backend.common.exception.ResourceNotFoundException;
 import com.pphgreen.backend.user.dto.UpdateProfileRequest;
 import com.pphgreen.backend.user.dto.UserProfileResponse;
+import com.pphgreen.backend.user.dto.UserPublicResponse;
 import com.pphgreen.backend.user.entity.AccountStatus;
 import com.pphgreen.backend.user.entity.Role;
 import com.pphgreen.backend.user.entity.User;
@@ -48,13 +50,29 @@ class UserServiceTest {
     }
 
     @Test
-    void getPublicProfileReturnsSafeDto() {
+    void getPublicProfileReturnsSafeDtoWithoutEmail() {
         when(userRepository.findById(5L)).thenReturn(Optional.of(sampleUser()));
 
-        UserProfileResponse response = userService.getPublicProfile(5L);
+        UserPublicResponse response = userService.getPublicProfile(5L);
 
         assertEquals("Jane Doe", response.name());
         assertEquals("Tower A", response.tower());
+        assertEquals("101", response.apartmentNumber());
+        assertEquals("https://cdn.example.com/pic.jpg", response.profilePicture());
+    }
+
+    @Test
+    void getPublicProfilesReturnsSafePeopleList() {
+        User second = sampleUser();
+        second.setName("John Smith");
+        when(userRepository.findAll()).thenReturn(List.of(sampleUser(), second));
+
+        List<UserPublicResponse> responses = userService.getPublicProfiles();
+
+        assertEquals(2, responses.size());
+        assertEquals("Jane Doe", responses.get(0).name());
+        assertEquals("John Smith", responses.get(1).name());
+        assertEquals("Tower A", responses.get(0).tower());
     }
 
     @Test

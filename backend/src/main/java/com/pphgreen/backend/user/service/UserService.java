@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.pphgreen.backend.common.exception.ResourceNotFoundException;
 import com.pphgreen.backend.user.dto.UpdateProfileRequest;
 import com.pphgreen.backend.user.dto.UserProfileResponse;
+import com.pphgreen.backend.user.dto.UserPublicResponse;
 import com.pphgreen.backend.user.entity.AdminStatus;
 import com.pphgreen.backend.user.entity.User;
 import com.pphgreen.backend.user.repository.UserRepository;
@@ -46,10 +47,17 @@ public class UserService {
         return toProfileResponse(getUserByEmail(email));
     }
 
-    public UserProfileResponse getPublicProfile(Long id) {
+    public List<UserPublicResponse> getPublicProfiles() {
+        return userRepository.findAll()
+                .stream()
+                .map(this::toPublicResponse)
+                .toList();
+    }
+
+    public UserPublicResponse getPublicProfile(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
-        return toProfileResponse(user);
+        return toPublicResponse(user);
     }
 
     public UserProfileResponse updateProfile(String email, UpdateProfileRequest request) {
@@ -73,6 +81,11 @@ public class UserService {
 
     public UserProfileResponse toProfileResponse(User user) {
         return new UserProfileResponse(user.getId(), user.getEmail(), user.getName(), user.getTower(),
+                user.getApartmentNumber(), user.getProfilePicture());
+    }
+
+    public UserPublicResponse toPublicResponse(User user) {
+        return new UserPublicResponse(user.getId(), user.getName(), user.getTower(),
                 user.getApartmentNumber(), user.getProfilePicture());
     }
 

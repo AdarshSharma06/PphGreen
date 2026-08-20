@@ -1,5 +1,7 @@
 package com.pphgreen.backend.user.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.pphgreen.backend.common.response.ApiResponse;
 import com.pphgreen.backend.user.dto.UpdateProfileRequest;
 import com.pphgreen.backend.user.dto.UserProfileResponse;
+import com.pphgreen.backend.user.dto.UserPublicResponse;
 import com.pphgreen.backend.user.service.UserService;
 
 import jakarta.validation.Valid;
@@ -32,8 +35,13 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(userService.getCurrentUserProfile(currentUserEmail())));
     }
 
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<UserPublicResponse>>> getUsers() {
+        return ResponseEntity.ok(ApiResponse.success(userService.getPublicProfiles()));
+    }
+
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserProfileResponse>> getPublicProfile(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<UserPublicResponse>> getPublicProfile(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(userService.getPublicProfile(id)));
     }
 
