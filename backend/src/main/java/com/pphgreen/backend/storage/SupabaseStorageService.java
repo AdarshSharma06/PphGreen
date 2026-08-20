@@ -1,16 +1,21 @@
 package com.pphgreen.backend.storage;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 import com.pphgreen.backend.common.exception.StorageException;
 
 @Component
 public class SupabaseStorageService implements StorageService {
+
+    private static final Logger log = LoggerFactory.getLogger(SupabaseStorageService.class);
 
     private final RestClient restClient;
     private final String baseUrl;
@@ -42,7 +47,12 @@ public class SupabaseStorageService implements StorageService {
                     .body(bytes)
                     .retrieve()
                     .toBodilessEntity();
+        } catch (RestClientResponseException e) {
+            log.warn("Supabase storage upload failed: HTTP {} response: {}",
+                    e.getStatusCode().value(), sanitizeResponseBody(e.getResponseBodyAsString()));
+            throw new StorageException("Storage upload failed");
         } catch (RestClientException e) {
+            log.warn("Supabase storage upload failed: non-HTTP error");
             throw new StorageException("Storage upload failed");
         }
 
@@ -67,6 +77,19 @@ public class SupabaseStorageService implements StorageService {
 
     private String publicUrl(String objectPath) {
         return baseObjectUrl + "/public/" + bucket + "/" + objectPath;
+    }
+
+    private String sanitizeResponseBody(String body) {
+        if (body == null || body.isBlank()) {
+            return "(empty)";
+        }
+        String sanitized = body.trim().replaceAll("[\\r\\n\\t]+", " ");
+        sanitized = sanitized.replaceAll("(?i)(bearer\\s+)\\S+", "$1***");
+        sanitized = sanitized.replaceAll("(?i)(\"?(apikey|authorization|service.role.key)\"?\\s*[:=]\\s*\"?)[^\"\\s,}]+", "$1***");
+        if (sanitized.length() > 500) {
+            sanitized = sanitized.substring(0, 500) + "... (truncated)";
+        }
+        return sanitized;
     }
 
     private void checkConfigured() {
