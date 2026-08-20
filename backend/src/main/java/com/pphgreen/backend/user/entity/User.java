@@ -36,6 +36,22 @@ public class User {
     @Column(name = "account_status", nullable = false, length = 20)
     private AccountStatus accountStatus;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "admin_status", length = 20)
+    private AdminStatus adminStatus;
+
+    @Column(length = 255)
+    private String name;
+
+    @Column(length = 255)
+    private String tower;
+
+    @Column(name = "apartment_number", length = 50)
+    private String apartmentNumber;
+
+    @Column(name = "profile_picture", length = 500)
+    private String profilePicture;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -88,6 +104,46 @@ public class User {
 
     public void setAccountStatus(AccountStatus accountStatus) {
         this.accountStatus = accountStatus;
+    }
+
+    public AdminStatus getAdminStatus() {
+        return adminStatus;
+    }
+
+    public void setAdminStatus(AdminStatus adminStatus) {
+        this.adminStatus = adminStatus;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getTower() {
+        return tower;
+    }
+
+    public void setTower(String tower) {
+        this.tower = tower;
+    }
+
+    public String getApartmentNumber() {
+        return apartmentNumber;
+    }
+
+    public void setApartmentNumber(String apartmentNumber) {
+        this.apartmentNumber = apartmentNumber;
+    }
+
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
     }
 
     public Instant getCreatedAt() {
