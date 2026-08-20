@@ -32,8 +32,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/events").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/events/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/events/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/events/{id}").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/events/{id}").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/gallery").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/gallery").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
