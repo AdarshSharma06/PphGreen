@@ -10,6 +10,7 @@ import com.pphgreen.backend.auth.dto.RegisterRequest;
 import com.pphgreen.backend.common.exception.EmailAlreadyExistsException;
 import com.pphgreen.backend.security.JwtService;
 import com.pphgreen.backend.user.entity.AccountStatus;
+import com.pphgreen.backend.user.entity.AdminStatus;
 import com.pphgreen.backend.user.entity.Role;
 import com.pphgreen.backend.user.entity.User;
 import com.pphgreen.backend.user.service.UserService;
@@ -41,6 +42,9 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setRole(Role.MEMBER);
         user.setAccountStatus(AccountStatus.ACTIVE);
+        if (request.adminRequest()) {
+            user.setAdminStatus(AdminStatus.PENDING);
+        }
 
         User saved = userService.save(user);
         return buildResponse(saved);

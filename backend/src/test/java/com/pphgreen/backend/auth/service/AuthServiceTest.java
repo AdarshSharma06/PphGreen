@@ -24,6 +24,7 @@ import com.pphgreen.backend.auth.dto.RegisterRequest;
 import com.pphgreen.backend.common.exception.EmailAlreadyExistsException;
 import com.pphgreen.backend.security.JwtService;
 import com.pphgreen.backend.user.entity.AccountStatus;
+import com.pphgreen.backend.user.entity.AdminStatus;
 import com.pphgreen.backend.user.entity.Role;
 import com.pphgreen.backend.user.entity.User;
 import com.pphgreen.backend.user.service.UserService;
@@ -73,6 +74,24 @@ class AuthServiceTest {
 
         assertThrows(EmailAlreadyExistsException.class,
                 () -> authService.register(new RegisterRequest("test@example.com", "StrongPassword123")));
+    }
+
+    @Test
+    void registerAsAdminRequestCreatesPendingMember() {
+        when(userService.existsByEmail("admin@example.com")).thenReturn(false);
+        when(passwordEncoder.encode("StrongPassword123")).thenReturn("hashed");
+        when(userService.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(jwtService.generateToken(anyString(), anyString())).thenReturn("jwt");
+
+        authService.register(new RegisterRequest("admin@example.com", "StrongPassword123", true));
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userService).save(captor.capture());
+        User saved = captor.getValue();
+
+        assertEquals(Role.MEMBER, saved.getRole());
+        assertEquals(AdminStatus.PENDING, saved.getAdminStatus());
+        assertEquals(AccountStatus.ACTIVE, saved.getAccountStatus());
     }
 
     @Test

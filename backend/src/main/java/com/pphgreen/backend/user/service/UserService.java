@@ -1,5 +1,6 @@
 package com.pphgreen.backend.user.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -7,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.pphgreen.backend.common.exception.ResourceNotFoundException;
 import com.pphgreen.backend.user.dto.UpdateProfileRequest;
 import com.pphgreen.backend.user.dto.UserProfileResponse;
+import com.pphgreen.backend.user.entity.AdminStatus;
 import com.pphgreen.backend.user.entity.User;
 import com.pphgreen.backend.user.repository.UserRepository;
 
@@ -25,6 +27,15 @@ public class UserService {
 
     public boolean existsByEmail(String email) {
         return userRepository.existsByEmail(normalizeEmail(email));
+    }
+
+    public User findById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User", id));
+    }
+
+    public List<User> findByAdminStatus(AdminStatus adminStatus) {
+        return userRepository.findByAdminStatus(adminStatus);
     }
 
     public User save(User user) {
