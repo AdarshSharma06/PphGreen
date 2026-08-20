@@ -1,0 +1,120 @@
+.events-page {
+  padding-bottom: var(--space-16);
+}
+
+.events-section-block {
+  margin-bottom: var(--space-10);
+}
+
+.events-section-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin-bottom: var(--space-4);
+  color: var(--text-secondary);
+}
+
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.event-list-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  text-decoration: none;
+  color: inherit;
+}
+
+.event-list-image {
+  width: 200px;
+  min-height: 140px;
+  overflow: hidden;
+}
+
+.event-list-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.event-list-item:hover .event-list-image img {
+  transform: scale(1.03);
+}
+
+.event-list-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.event-list-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.event-list-date,
+.event-list-time {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--green-600);
+  font-weight: 500;
+}
+
+.event-list-title {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.event-list-desc {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.event-list-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: auto;
+}
+
+.event-list-venue {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.event-list-author {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+@media (max-width: 768px) {
+  .event-list-item {
+    grid-template-columns: 1fr;
+  }
+
+  .event-list-image {
+    width: 100%;
+    min-height: 160px;
+    max-height: 200px;
+  }
+}

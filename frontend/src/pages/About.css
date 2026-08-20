@@ -1,0 +1,110 @@
+.about-page {
+  padding-bottom: var(--space-16);
+}
+
+.about-entry {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-10);
+  margin-bottom: var(--space-8);
+}
+
+.about-entry-grid {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: var(--space-12);
+  align-items: start;
+}
+
+.about-entry-title {
+  font-size: var(--text-3xl);
+  margin-bottom: var(--space-4);
+}
+
+.about-entry-desc {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+  margin-bottom: var(--space-8);
+}
+
+.about-ideals {
+  margin-bottom: var(--space-8);
+}
+
+.about-ideals h4 {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--green-600);
+  margin-bottom: var(--space-4);
+}
+
+.about-ideal-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.about-ideal-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green-500);
+  flex-shrink: 0;
+}
+
+.about-impact {
+  margin-bottom: var(--space-6);
+}
+
+.about-impact h4 {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--green-600);
+  margin-bottom: var(--space-3);
+}
+
+.about-impact-text {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+  white-space: pre-wrap;
+}
+
+.about-entry-image {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.about-entry-image img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.about-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-light);
+}
+
+@media (max-width: 768px) {
+  .about-entry {
+    padding: var(--space-6);
+  }
+
+  .about-entry-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+}

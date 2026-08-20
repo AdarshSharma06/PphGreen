@@ -1,0 +1,27 @@
+.suggestion-page {
+  padding-bottom: var(--space-16);
+}
+
+.suggestion-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.suggestions-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 640px;
+}
+
+.suggestion-content {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  line-height: var(--leading-normal);
+  white-space: pre-wrap;
+}
+
+.suggestion-meta {
+  margin-top: var(--space-2);
+}
