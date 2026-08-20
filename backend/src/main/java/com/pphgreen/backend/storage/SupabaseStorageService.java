@@ -42,6 +42,7 @@ public class SupabaseStorageService implements StorageService {
         try {
             restClient.post()
                     .uri(baseObjectUrl + "/" + object)
+                    .header("apikey", serviceRoleKey)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + serviceRoleKey)
                     .contentType(MediaType.parseMediaType(contentType))
                     .body(bytes)
@@ -67,6 +68,7 @@ public class SupabaseStorageService implements StorageService {
         try {
             restClient.delete()
                     .uri(baseObjectUrl + "/" + object)
+                    .header("apikey", serviceRoleKey)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + serviceRoleKey)
                     .retrieve()
                     .toBodilessEntity();
