@@ -67,7 +67,7 @@ class EventServiceTest {
 
     @Test
     void memberCanViewAllEvents() {
-        when(eventRepository.findAllByOrderByDateAsc()).thenReturn(List.of(sampleEvent(), sampleEvent()));
+        when(eventRepository.findAllWithCreatedBy()).thenReturn(List.of(sampleEvent(), sampleEvent()));
 
         List<EventResponse> responses = eventService.getAllEvents();
 
@@ -78,7 +78,7 @@ class EventServiceTest {
     @Test
     void memberCanViewEventById() {
         Event event = sampleEvent();
-        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+        when(eventRepository.findWithCreatedBy(1L)).thenReturn(Optional.of(event));
 
         EventResponse response = eventService.getEvent(1L);
 
@@ -92,7 +92,7 @@ class EventServiceTest {
         past.setDate(LocalDate.now().minusDays(1));
         Event future = sampleEvent();
         future.setDate(LocalDate.now().plusDays(1));
-        when(eventRepository.findAllByOrderByDateAsc()).thenReturn(List.of(past, future));
+        when(eventRepository.findAllWithCreatedBy()).thenReturn(List.of(past, future));
 
         List<EventResponse> responses = eventService.getUpcomingEvents();
 
@@ -105,7 +105,7 @@ class EventServiceTest {
         User admin = adminUser();
         Event event = sampleEvent();
         when(userService.findByEmail("admin@example.com")).thenReturn(Optional.of(admin));
-        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+        when(eventRepository.findWithCreatedBy(1L)).thenReturn(Optional.of(event));
         when(eventRepository.save(any(Event.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         EventRequest update = new EventRequest("Updated Title", "Updated description",
@@ -125,7 +125,7 @@ class EventServiceTest {
         User admin = adminUser();
         Event event = sampleEvent();
         when(userService.findByEmail("admin@example.com")).thenReturn(Optional.of(admin));
-        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+        when(eventRepository.findWithCreatedBy(1L)).thenReturn(Optional.of(event));
 
         eventService.deleteEvent(1L, "admin@example.com");
 
@@ -161,7 +161,7 @@ class EventServiceTest {
 
     @Test
     void getMissingEventThrowsResourceNotFound() {
-        when(eventRepository.findById(999L)).thenReturn(Optional.empty());
+        when(eventRepository.findWithCreatedBy(999L)).thenReturn(Optional.empty());
 
         ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
                 () -> eventService.getEvent(999L));
@@ -173,7 +173,7 @@ class EventServiceTest {
     void updateMissingEventThrowsResourceNotFound() {
         User admin = adminUser();
         when(userService.findByEmail("admin@example.com")).thenReturn(Optional.of(admin));
-        when(eventRepository.findById(999L)).thenReturn(Optional.empty());
+        when(eventRepository.findWithCreatedBy(999L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class,
                 () -> eventService.updateEvent(999L, request(), "admin@example.com"));
@@ -183,7 +183,7 @@ class EventServiceTest {
     void deleteMissingEventThrowsResourceNotFound() {
         User admin = adminUser();
         when(userService.findByEmail("admin@example.com")).thenReturn(Optional.of(admin));
-        when(eventRepository.findById(999L)).thenReturn(Optional.empty());
+        when(eventRepository.findWithCreatedBy(999L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class,
                 () -> eventService.deleteEvent(999L, "admin@example.com"));

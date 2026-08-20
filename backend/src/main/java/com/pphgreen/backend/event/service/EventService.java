@@ -31,7 +31,7 @@ public class EventService {
     }
 
     public List<EventResponse> getAllEvents() {
-        return eventRepository.findAllByOrderByDateAsc()
+        return eventRepository.findAllWithCreatedBy()
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -39,7 +39,7 @@ public class EventService {
 
     public List<EventResponse> getUpcomingEvents() {
         LocalDateTime now = LocalDateTime.now();
-        return eventRepository.findAllByOrderByDateAsc()
+        return eventRepository.findAllWithCreatedBy()
                 .stream()
                 .filter(event -> !eventDateTime(event).isBefore(now))
                 .map(this::toResponse)
@@ -71,7 +71,7 @@ public class EventService {
     }
 
     private Event findEvent(Long id) {
-        return eventRepository.findById(id)
+        return eventRepository.findWithCreatedBy(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event", id));
     }
 
