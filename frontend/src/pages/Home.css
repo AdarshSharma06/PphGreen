@@ -1,6 +1,7 @@
 /* ================= HERO ================= */
 
 .hero-section {
+  position: relative;
   padding: var(--space-16) 0 var(--space-20);
   background:
     linear-gradient(180deg, rgba(240, 253, 244, 0.55) 0%, rgba(250, 250, 249, 0) 55%),
@@ -8,7 +9,22 @@
   overflow: hidden;
 }
 
+.hero-section::before {
+  content: '';
+  position: absolute;
+  left: -110px;
+  bottom: -130px;
+  width: clamp(220px, 42vw, 640px);
+  aspect-ratio: 1;
+  background: url('/assets/branding/pph_green_logo_mark.png') center / contain no-repeat;
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: 0;
+}
+
 .hero-section .container {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--space-16);
@@ -31,8 +47,8 @@
 }
 
 .hero-badge-logo {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   object-fit: cover;
 }
@@ -364,6 +380,7 @@
 }
 
 .community-band-panel {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -371,6 +388,27 @@
   border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
   padding: var(--space-12);
   margin-left: -1px;
+  overflow: hidden;
+}
+
+.community-band-panel::before {
+  content: '';
+  position: absolute;
+  right: -60px;
+  bottom: -80px;
+  width: 260px;
+  aspect-ratio: 1;
+  background: url('/assets/branding/pph_green_logo_mark.png') center / contain no-repeat;
+  opacity: 0.08;
+  filter: brightness(0) invert(1);
+  pointer-events: none;
+}
+
+.community-band-panel h2,
+.community-band-panel p,
+.community-band-btn {
+  position: relative;
+  z-index: 1;
 }
 
 .community-band-panel h2 {
@@ -513,10 +551,30 @@
 /* ================= CTA ================= */
 
 .cta-card {
+  position: relative;
   background: var(--green-700);
   border-radius: var(--radius-xl);
   padding: var(--space-16) var(--space-12);
   text-align: center;
+  overflow: hidden;
+}
+
+.cta-card::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -60px;
+  width: 300px;
+  aspect-ratio: 1;
+  background: url('/assets/branding/pph_green_logo_mark.png') center / contain no-repeat;
+  opacity: 0.07;
+  filter: brightness(0) invert(1);
+  pointer-events: none;
+}
+
+.cta-content {
+  position: relative;
+  z-index: 1;
 }
 
 .cta-content h2 {

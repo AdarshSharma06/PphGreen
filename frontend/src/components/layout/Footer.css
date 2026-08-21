@@ -28,9 +28,9 @@
 }
 
 .footer-logo-img {
-  height: 32px;
+  height: 40px;
   width: auto;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: #fff;
 }
