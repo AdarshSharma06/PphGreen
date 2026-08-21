@@ -27,6 +27,14 @@
   margin-bottom: var(--space-3);
 }
 
+.footer-logo-img {
+  height: 32px;
+  width: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
 .footer-tagline {
   font-size: var(--text-sm);
   color: var(--text-secondary);

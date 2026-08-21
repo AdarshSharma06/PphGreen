@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { Sprout } from 'lucide-react';
 import './Footer.css';
 
 export default function Footer() {
@@ -9,7 +8,12 @@ export default function Footer() {
         <div className="footer-grid">
           <div className="footer-brand">
             <Link to="/" className="footer-logo">
-              <Sprout size={20} strokeWidth={2.5} color="var(--green-600)" />
+              <img
+                src="/assets/branding/pph_green_logo.jpeg"
+                alt="PPH Green logo"
+                className="footer-logo-img"
+                loading="lazy"
+              />
               <span>PPH Green</span>
             </Link>
             <p className="footer-tagline">

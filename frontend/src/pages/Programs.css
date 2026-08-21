@@ -23,6 +23,11 @@
   height: 100%;
   object-fit: cover;
   min-height: 200px;
+  transition: transform var(--transition-slow);
+}
+
+.program-list-item:hover .program-list-image img {
+  transform: scale(1.03);
 }
 
 .program-list-title {

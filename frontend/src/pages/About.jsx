@@ -71,9 +71,17 @@ export default function About() {
                   </div>
                 )}
               </div>
-              {entry.image && (
+              {entry.image ? (
                 <div className="about-entry-image">
                   <img src={entry.image} alt={entry.title} loading="lazy" />
+                </div>
+              ) : (
+                <div className="about-entry-image about-entry-image-fallback">
+                  <img
+                    src="/assets/apartments/Apartment_2.jpg"
+                    alt="Homes of the PPH Green community"
+                    loading="lazy"
+                  />
                 </div>
               )}
             </div>

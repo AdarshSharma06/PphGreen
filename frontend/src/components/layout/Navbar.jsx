@@ -50,7 +50,11 @@ export default function Navbar() {
     <nav className="navbar" role="navigation" aria-label="Main navigation">
       <div className="navbar-inner container">
         <Link to="/" className="navbar-brand">
-          <Sprout size={24} strokeWidth={2.5} color="var(--green-600)" />
+          <img
+            src="/assets/branding/pph_green_logo.jpeg"
+            alt="PPH Green logo"
+            className="navbar-brand-logo"
+          />
           <span className="navbar-brand-text">PPH Green</span>
         </Link>
 

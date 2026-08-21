@@ -22,6 +22,15 @@
   color: var(--text-primary);
 }
 
+.navbar-brand-logo {
+  height: 38px;
+  width: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: #fff;
+  flex-shrink: 0;
+}
+
 .navbar-brand-text {
   font-size: var(--text-lg);
   font-weight: 700;
