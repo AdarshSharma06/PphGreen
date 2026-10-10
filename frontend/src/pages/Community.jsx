@@ -2,9 +2,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { communityApi } from '../api/client';
-import { Image as ImageIcon, MessageCircle, Search, X, Users, Sprout } from 'lucide-react';
+import { Image as ImageIcon, MessageCircle, Search, X, Users, Sprout, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { messageApi } from '../api/client';
+import Modal from '../components/ui/Modal';
 import './Community.css';
 
 function useDebounced(value, delay = 300) {
@@ -27,12 +28,13 @@ export default function Community() {
   const [error, setError] = useState('');
   const feedRef = useRef(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const [showComposer, setShowComposer] = useState(false);
+  const [mobileMembersOpen, setMobileMembersOpen] = useState(false);
 
   const fetchPosts = useCallback(async (cur, isInitial = false) => {
     try {
       const res = await communityApi.getPosts(cur, 10);
       const data = res.data || [];
-      // Backend returns ASC (oldest→newest). For initial, data is latest N ASC (81..100). For older, data is 61..80 ASC.
       if (isInitial) {
         setPosts(data);
         setHasMore(data.length === 10);
@@ -43,13 +45,11 @@ export default function Community() {
           setHasMore(false);
           return;
         }
-        // preserve scroll
         const container = feedRef.current;
         const prevHeight = container ? container.scrollHeight : 0;
         const prevTop = container ? container.scrollTop : 0;
         setPosts((prev) => {
           const merged = [...data, ...prev];
-          // deduplicate by id
           const map = new Map();
           merged.forEach((p) => map.set(p.id, p));
           const deduped = Array.from(map.values()).sort((a, b) => {
@@ -77,12 +77,11 @@ export default function Community() {
     fetchPosts(null, true).finally(() => setLoading(false));
   }, [fetchPosts]);
 
-  // initial scroll to bottom
   useEffect(() => {
     if (posts.length && feedRef.current && isAtBottom) {
       feedRef.current.scrollTop = feedRef.current.scrollHeight;
     }
-  }, [posts.length]); // only on initial length change, but we handle with isAtBottom
+  }, [posts.length]);
 
   const handleScroll = () => {
     const el = feedRef.current;
@@ -104,7 +103,7 @@ export default function Community() {
 
   const startConversation = async (memberId) => {
     try {
-      const res = await messageApi.createConversation(memberId);
+      await messageApi.createConversation(memberId);
       navigate('/messages');
     } catch (err) {
       console.error(err);
@@ -112,19 +111,10 @@ export default function Community() {
   };
 
   return (
-    <div className="community-page">
-      <div className="container">
-        <div className="page-header" style={{ marginBottom: 'var(--space-6)' }}>
-          <div>
-            <h1>Our Community</h1>
-            <p>Connect with neighbours, share updates, and celebrate life at PPH Green.</p>
-          </div>
-        </div>
-
-        <div className="community-layout">
-          <div className="community-feed" ref={feedRef} onScroll={handleScroll} style={{ overflowY: 'auto', maxHeight: '75vh', scrollBehavior: 'auto' }}>
-            {isAuthenticated && <CreatePostComposer onCreated={handleNewPost} />}
-
+    <div className="community-fullscreen">
+      <div className="community-workspace">
+        <div className="community-feed-column">
+          <div className="community-feed" ref={feedRef} onScroll={handleScroll}>
             {loading && <div className="loading-container"><div className="loading-spinner" /><p className="loading-text">Loading posts...</p></div>}
             {error && <div className="alert alert-error">{error} <button className="btn btn-ghost btn-sm" onClick={() => fetchPosts(null, true)}>Retry</button></div>}
 
@@ -152,16 +142,30 @@ export default function Community() {
             )}
           </div>
 
-          <div className="community-sidebar">
-            <MemberDirectory onMessage={startConversation} currentUserId={user?.id} />
-          </div>
+          {isAuthenticated && (
+            <button className="fab" onClick={() => setShowComposer(true)} aria-label="Create post">
+              <Plus size={24} />
+            </button>
+          )}
+
+          <button className="btn btn-ghost members-toggle-mobile" onClick={() => setMobileMembersOpen(!mobileMembersOpen)}>
+            <Users size={16} /> Members
+          </button>
+        </div>
+
+        <div className={`community-sidebar ${mobileMembersOpen ? 'open' : ''}`}>
+          <MemberDirectory onMessage={startConversation} currentUserId={user?.id} onClose={() => setMobileMembersOpen(false)} />
         </div>
       </div>
+
+      {showComposer && (
+        <CreatePostModal onClose={() => setShowComposer(false)} onCreated={(p) => { setShowComposer(false); handleNewPost(p); }} />
+      )}
     </div>
   );
 }
 
-function CreatePostComposer({ onCreated }) {
+function CreatePostModal({ onClose, onCreated }) {
   const [content, setContent] = useState('');
   const [files, setFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
@@ -177,7 +181,6 @@ function CreatePostComposer({ onCreated }) {
     const newFiles = [...files, ...list].slice(0, 6);
     setFiles(newFiles);
     const newPreviews = newFiles.map((f) => URL.createObjectURL(f));
-    // revoke old
     previews.forEach((url) => URL.revokeObjectURL(url));
     setPreviews(newPreviews);
     setError('');
@@ -199,10 +202,7 @@ function CreatePostComposer({ onCreated }) {
     try {
       const res = await communityApi.createPost(content.trim(), files);
       onCreated(res.data);
-      setContent('');
       previews.forEach((url) => URL.revokeObjectURL(url));
-      setFiles([]);
-      setPreviews([]);
     } catch (err) {
       setError(err.message || 'Failed to create post');
     } finally {
@@ -211,35 +211,35 @@ function CreatePostComposer({ onCreated }) {
   };
 
   return (
-    <div className="composer card">
-      <div className="card-body">
-        <h3 style={{ marginBottom: 'var(--space-3)' }}>Create a post</h3>
-        <form onSubmit={handleSubmit}>
-          <textarea className="input" placeholder="Share an update, ask a question, or celebrate a moment..." value={content} onChange={(e) => setContent(e.target.value)} rows={3} maxLength={5000} style={{ resize: 'vertical' }} />
-          <div className="composer-actions">
-            <label className="btn btn-ghost btn-sm" style={{ cursor: 'pointer' }}>
-              <ImageIcon size={16} /> Add images ({files.length}/6)
-              <input type="file" accept="image/*" multiple onChange={handleFiles} style={{ display: 'none' }} />
-            </label>
-            <span className="text-xs text-muted">{content.length}/5000</span>
-            <button type="submit" className="btn btn-primary btn-sm" disabled={submitting || !content.trim()} style={{ marginLeft: 'auto' }}>
-              {submitting ? 'Posting...' : 'Post'}
-            </button>
+    <Modal isOpen onClose={onClose} title="Create post">
+      <form onSubmit={handleSubmit}>
+        <textarea className="input" placeholder="Share an update, ask a question, or celebrate a moment..." value={content} onChange={(e) => setContent(e.target.value)} rows={4} maxLength={5000} style={{ resize: 'vertical' }} autoFocus />
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--space-2)' }}>
+          <label className="btn btn-ghost btn-sm" style={{ cursor: 'pointer' }}>
+            <ImageIcon size={16} /> Add images ({files.length}/6)
+            <input type="file" accept="image/*" multiple onChange={handleFiles} style={{ display: 'none' }} />
+          </label>
+          <span className="text-xs text-muted">{content.length}/5000</span>
+        </div>
+        {previews.length > 0 && (
+          <div className="composer-previews">
+            {previews.map((url, i) => (
+              <div key={i} className="preview-item">
+                <img src={url} alt="preview" />
+                <button type="button" className="preview-remove" onClick={() => removeAt(i)}><X size={12} /></button>
+              </div>
+            ))}
           </div>
-          {previews.length > 0 && (
-            <div className="composer-previews">
-              {previews.map((url, i) => (
-                <div key={i} className="preview-item">
-                  <img src={url} alt="preview" />
-                  <button type="button" className="preview-remove" onClick={() => removeAt(i)}><X size={12} /></button>
-                </div>
-              ))}
-            </div>
-          )}
-          {error && <div className="alert alert-error" style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-sm)' }}>{error}</div>}
-        </form>
-      </div>
-    </div>
+        )}
+        {error && <div className="alert alert-error" style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-sm)' }}>{error}</div>}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
+          <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          <button type="submit" className="btn btn-primary" disabled={submitting || !content.trim()}>
+            {submitting ? 'Posting...' : 'Post'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 
@@ -333,7 +333,7 @@ function PostCard({ post }) {
   );
 }
 
-function MemberDirectory({ onMessage, currentUserId }) {
+function MemberDirectory({ onMessage, currentUserId, onClose }) {
   const [q, setQ] = useState('');
   const debounced = useDebounced(q, 400);
   const [members, setMembers] = useState([]);
@@ -350,36 +350,35 @@ function MemberDirectory({ onMessage, currentUserId }) {
   }, [debounced]);
 
   return (
-    <div className="member-directory card">
-      <div className="card-body">
-        <h3 className="flex items-center gap-2" style={{ marginBottom: 'var(--space-3)' }}><Users size={18} /> Members</h3>
-        <div className="input-group" style={{ marginBottom: 'var(--space-3)' }}>
-          <div style={{ position: 'relative' }}>
-            <Search size={16} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input className="input" placeholder="Search by name or flat..." value={q} onChange={(e) => setQ(e.target.value)} style={{ paddingLeft: 32 }} />
-          </div>
-        </div>
+    <div className="member-directory">
+      <div className="member-directory-header">
+        <h3 className="flex items-center gap-2"><Users size={18} /> Members</h3>
+        {onClose && <button className="btn btn-ghost btn-sm hidden-desktop" onClick={onClose}><X size={16} /></button>}
+      </div>
+      <div className="member-search">
+        <Search size={16} className="member-search-icon" />
+        <input className="input member-search-input" placeholder="Search by name or flat..." value={q} onChange={(e) => setQ(e.target.value)} />
+      </div>
 
+      <div className="member-list">
         {loading && <div className="loading-container"><div className="loading-spinner" /></div>}
         {error && <div className="alert alert-error text-sm">{error}</div>}
         {!loading && members.length === 0 && !error && <div className="empty-state"><p className="text-sm text-muted">No members found</p></div>}
 
-        <div className="member-list">
-          {members.filter((m) => m.id !== currentUserId).map((m) => (
-            <div key={m.id} className="member-row">
-              <div className="avatar">
-                {m.profilePicture ? <img src={m.profilePicture} alt="" /> : <span>{(m.name || '?')[0].toUpperCase()}</span>}
-              </div>
-              <div className="member-info">
-                <div className="font-semibold text-sm truncate">{m.name || 'Unnamed'}</div>
-                <div className="text-xs text-muted truncate">{[m.tower, m.apartmentNumber].filter(Boolean).join(' - ') || 'Resident'}</div>
-              </div>
-              <button className="btn-icon" onClick={() => onMessage(m.id)} aria-label={`Message ${m.name}`} title="Message">
-                <MessageCircle size={16} />
-              </button>
+        {members.filter((m) => m.id !== currentUserId).map((m) => (
+          <div key={m.id} className="member-row">
+            <div className="avatar">
+              {m.profilePicture ? <img src={m.profilePicture} alt="" /> : <span>{(m.name || '?')[0].toUpperCase()}</span>}
             </div>
-          ))}
-        </div>
+            <div className="member-info">
+              <div className="font-semibold text-sm truncate">{m.name || 'Unnamed'}</div>
+              <div className="text-xs text-muted truncate">{[m.tower, m.apartmentNumber].filter(Boolean).join(' - ') || 'Resident'}</div>
+            </div>
+            <button className="btn-icon" onClick={() => onMessage(m.id)} aria-label={`Message ${m.name}`} title="Message">
+              <MessageCircle size={16} />
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );

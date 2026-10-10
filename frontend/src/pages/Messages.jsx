@@ -7,7 +7,10 @@ import './Messages.css';
 
 function useDebounced(value, delay = 300) {
   const [d, setD] = useState(value);
-  useEffect(() => { const id = setTimeout(() => setD(value), delay); return () => clearTimeout(id); }, [value, delay]);
+  useEffect(() => {
+    const id = setTimeout(() => setD(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
   return d;
 }
 
@@ -20,8 +23,8 @@ export default function Messages() {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounced(search, 300);
   const [showNew, setShowNew] = useState(false);
-
   const isFetchingRef = useRef(false);
+
   const fetchConversations = useCallback(async (isPoll = false) => {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
@@ -32,7 +35,6 @@ export default function Messages() {
       setError('');
     } catch (err) {
       if (!isPoll) setError(err.message || 'Failed to load conversations');
-      // polling failures are silent — do not clear conversations
       console.warn('Failed to refresh conversations', err);
     } finally {
       if (!isPoll) setLoading(false);
@@ -40,12 +42,20 @@ export default function Messages() {
     }
   }, []);
 
-  useEffect(() => { fetchConversations(false); }, [fetchConversations]);
-  // polling for new messages/conversations every 5s — independent, never clears data
+  useEffect(() => {
+    fetchConversations(false);
+  }, [fetchConversations]);
+
   useEffect(() => {
     const id = setInterval(() => fetchConversations(true), 5000);
     return () => clearInterval(id);
   }, [fetchConversations]);
+
+  const handleNewConversation = (conv) => {
+    setShowNew(false);
+    fetchConversations(false);
+    setSelectedId(conv.id);
+  };
 
   const filtered = conversations.filter((c) => {
     if (!debouncedSearch) return true;
@@ -55,61 +65,50 @@ export default function Messages() {
   const selected = conversations.find((c) => c.id === selectedId) || null;
 
   return (
-    <div className="messages-page">
-      <div className="container">
-        <div className="page-header" style={{ marginBottom: 'var(--space-4)' }}>
-          <h1>Messages</h1>
-          <p className="text-sm text-muted">Private conversations with fellow residents</p>
+    <div className="messages-fullscreen">
+      <div className="messages-workspace">
+        <div className={`conversations-sidebar ${selectedId ? 'hidden-mobile' : ''}`}>
+          <div className="conversations-header">
+            <div className="search-box">
+              <Search size={16} className="search-icon" />
+              <input className="input search-input" placeholder="Search conversations..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            </div>
+            <button className="btn btn-primary btn-sm" onClick={() => setShowNew(true)}>New Message</button>
+          </div>
+          {loading && <div className="loading-container"><div className="loading-spinner" /></div>}
+          {error && <div className="alert alert-error text-sm">{error}</div>}
+          <div className="conversation-list">
+            {filtered.length === 0 && !loading && <div className="empty-state" style={{ padding: 'var(--space-8)' }}><MessageCircle size={32} /><p className="text-sm text-muted">No conversations yet. Start a new one from the Community member directory.</p></div>}
+            {filtered.map((conv) => (
+              <button key={conv.id} className={`conversation-item ${selectedId === conv.id ? 'active' : ''} ${conv.unreadCount > 0 ? 'unread' : ''}`} onClick={() => setSelectedId(conv.id)}>
+                <div className="avatar">
+                  {conv.otherParticipant.profilePicture ? <img src={conv.otherParticipant.profilePicture} alt="" /> : <span>{(conv.otherParticipant.name || '?')[0].toUpperCase()}</span>}
+                </div>
+                <div className="conversation-info">
+                  <div className="conversation-name">{conv.otherParticipant.name}</div>
+                  <div className="conversation-preview truncate">{conv.lastMessagePreview || 'No messages yet'}</div>
+                </div>
+                <div className="conversation-meta">
+                  <span className="text-xs text-muted">{conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleDateString() : ''}</span>
+                  {conv.unreadCount > 0 && <span className="unread-badge">{conv.unreadCount}</span>}
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
-
-        <div className="messages-layout">
-          <div className={`conversations-sidebar ${selectedId ? 'hidden-mobile' : ''}`}>
-            <div className="conversations-header">
-              <div className="search-box">
-                <Search size={16} className="search-icon" />
-                <input className="input" placeholder="Search conversations..." value={search} onChange={(e) => setSearch(e.target.value)} />
-              </div>
-              <button className="btn btn-primary btn-sm" onClick={() => setShowNew(true)}>New Message</button>
+        <div className={`conversation-panel ${!selectedId ? 'hidden-mobile' : ''}`}>
+          {selected ? (
+            <ConversationView conversation={selected} onBack={() => setSelectedId(null)} onRead={() => fetchConversations(true)} currentUserId={user?.id} />
+          ) : (
+            <div className="empty-conversation">
+              <MessageCircle size={48} strokeWidth={1.2} />
+              <h3>Select a conversation</h3>
+              <p className="text-sm text-muted">Choose a conversation from the list or start a new one.</p>
             </div>
-
-            {loading && <div className="loading-container"><div className="loading-spinner" /></div>}
-            {error && <div className="alert alert-error text-sm">{error}</div>}
-
-            <div className="conversation-list">
-              {filtered.length === 0 && !loading && <div className="empty-state" style={{ padding: 'var(--space-8)' }}><MessageCircle size={32} /><p className="text-sm text-muted">No conversations yet. Start a new one from the Community member directory.</p></div>}
-              {filtered.map((conv) => (
-                <button key={conv.id} className={`conversation-item ${selectedId === conv.id ? 'active' : ''} ${conv.unreadCount > 0 ? 'unread' : ''}`} onClick={() => setSelectedId(conv.id)}>
-                  <div className="avatar">
-                    {conv.otherParticipant.profilePicture ? <img src={conv.otherParticipant.profilePicture} alt="" /> : <span>{(conv.otherParticipant.name || '?')[0].toUpperCase()}</span>}
-                  </div>
-                  <div className="conversation-info">
-                    <div className="conversation-name">{conv.otherParticipant.name}</div>
-                    <div className="conversation-preview truncate">{conv.lastMessagePreview || 'No messages yet'}</div>
-                  </div>
-                  <div className="conversation-meta">
-                    <span className="text-xs text-muted">{conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleDateString() : ''}</span>
-                    {conv.unreadCount > 0 && <span className="unread-badge">{conv.unreadCount}</span>}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={`conversation-panel ${!selectedId ? 'hidden-mobile' : ''}`}>
-            {selected ? (
-              <ConversationView conversation={selected} onBack={() => setSelectedId(null)} onRead={fetchConversations} currentUserId={user?.id} />
-            ) : (
-              <div className="empty-conversation">
-                <MessageCircle size={48} strokeWidth={1.2} />
-                <h3>Select a conversation</h3>
-                <p className="text-sm text-muted">Choose a conversation from the list or start a new one.</p>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
-
-      {showNew && <NewConversationModal onClose={() => setShowNew(false)} onCreated={(conv) => { setShowNew(false); fetchConversations(); setSelectedId(conv.id); }} />}
+      {showNew ? <NewConversationModal onClose={() => setShowNew(false)} onCreated={handleNewConversation} /> : null}
     </div>
   );
 }
@@ -164,12 +163,10 @@ function ConversationView({ conversation, onBack, onRead, currentUserId }) {
     setCursor(null);
     setHasMore(true);
     fetchMessages(null, true).finally(() => { if (!cancelled) setLoading(false); });
-    // mark read independently — failure must not clear messages or set fetchError
     messageApi.markRead(conversation.id).catch(() => {}).then(() => { if (!cancelled) onRead(); });
     return () => { cancelled = true; };
   }, [conversation.id, fetchMessages, onRead]);
 
-  // polling for new messages — never clears existing, silent on failure
   const isPollingRef = useRef(false);
   useEffect(() => {
     const id = setInterval(async () => {
@@ -190,10 +187,9 @@ function ConversationView({ conversation, onBack, onRead, currentUserId }) {
           }, 50);
           return merged;
         });
-        // mark read silently
         messageApi.markRead(conversation.id).catch(() => {});
       } catch {
-        // polling failure is silent — do not set fetchError or clear messages
+        // polling failure is silent
       } finally {
         isPollingRef.current = false;
       }
@@ -201,7 +197,6 @@ function ConversationView({ conversation, onBack, onRead, currentUserId }) {
     return () => clearInterval(id);
   }, [conversation.id]);
 
-  // initial scroll to bottom
   useEffect(() => {
     if (listRef.current && messages.length && !loading) {
       listRef.current.scrollTop = listRef.current.scrollHeight;
@@ -246,7 +241,6 @@ function ConversationView({ conversation, onBack, onRead, currentUserId }) {
         </div>
         <span className="font-semibold text-sm">{conversation.otherParticipant.name}</span>
       </div>
-
       <div className="messages-list" ref={listRef} onScroll={handleScroll}>
         {loading && <div className="loading-container"><div className="loading-spinner" /></div>}
         {fetchError && (
@@ -269,9 +263,7 @@ function ConversationView({ conversation, onBack, onRead, currentUserId }) {
           );
         })}
       </div>
-
       {sendError && <div className="alert alert-error text-sm" style={{ margin: 'var(--space-2)' }}>{sendError}</div>}
-
       <form className="composer-bar" onSubmit={handleSend}>
         <input className="input" placeholder="Type a message..." value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} />
         <button className="btn btn-primary btn-sm" disabled={sending || !text.trim()}>{sending ? 'Sending...' : 'Send'}</button>
@@ -324,5 +316,3 @@ function NewConversationModal({ onClose, onCreated }) {
     </div>
   );
 }
-
-

@@ -10,13 +10,25 @@ export default function Shell() {
     window.scrollTo(0, 0);
   }, [pathname]);
 
+  const isFullScreen = pathname.startsWith('/community') || pathname.startsWith('/messages');
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', height: isFullScreen ? '100dvh' : 'auto' }}>
       <Navbar />
-      <main style={{ flex: 1 }}>
+      <main
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+          minWidth: 0,
+          height: isFullScreen ? 'calc(100dvh - var(--nav-height))' : 'auto',
+          overflow: isFullScreen ? 'hidden' : 'visible',
+        }}
+      >
         <Outlet />
       </main>
-      <Footer />
+      {!isFullScreen && <Footer />}
     </div>
   );
 }
