@@ -2,6 +2,7 @@ package com.pphgreen.backend.reaction.service;
 
 import java.util.List;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import com.pphgreen.backend.common.exception.ConflictException;
@@ -14,6 +15,7 @@ import com.pphgreen.backend.reaction.dto.ReactionRequest;
 import com.pphgreen.backend.reaction.dto.ReactionResponse;
 import com.pphgreen.backend.reaction.dto.ReactionUserSummary;
 import com.pphgreen.backend.reaction.entity.Reaction;
+import com.pphgreen.backend.reaction.entity.ReactionType;
 import com.pphgreen.backend.reaction.repository.ReactionRepository;
 import com.pphgreen.backend.user.entity.User;
 import com.pphgreen.backend.user.service.UserService;
@@ -47,8 +49,12 @@ public class ReactionService {
         reaction.setUser(user);
         reaction.setReactionType(request.reactionType());
 
-        Reaction saved = reactionRepository.save(reaction);
-        return toResponse(findWithUserById(saved.getId()));
+        try {
+            Reaction saved = reactionRepository.save(reaction);
+            return toResponse(findWithUserById(saved.getId()));
+        } catch (DataIntegrityViolationException ex) {
+            throw new ConflictException("Reaction already exists");
+        }
     }
 
     public List<ReactionResponse> getReactionsForEvent(Long eventId) {
@@ -62,9 +68,26 @@ public class ReactionService {
     }
 
     public void removeReaction(Long eventId, String userEmail) {
+        removeReaction(eventId, userEmail, null);
+    }
+
+    public void removeReaction(Long eventId, String userEmail, ReactionType reactionType) {
         User user = user(userEmail);
         if (!eventRepository.existsById(eventId)) {
             throw new ResourceNotFoundException("Event", eventId);
+        }
+
+        if (reactionType != null) {
+            var existing = reactionRepository.findByEventIdAndUserIdAndReactionType(eventId, user.getId(), reactionType);
+            if (existing.isEmpty()) {
+                throw new ResourceNotFoundException("Reaction not found for event: " + eventId);
+            }
+            Reaction reaction = existing.get();
+            if (!reaction.getUser().getEmail().equalsIgnoreCase(user.getEmail())) {
+                throw new ForbiddenException("You can only remove your own reactions");
+            }
+            reactionRepository.delete(reaction);
+            return;
         }
 
         List<Reaction> reactions = reactionRepository.findByEventIdAndUserIdWithUser(eventId, user.getId());
@@ -93,7 +116,11 @@ public class ReactionService {
 
     private ReactionResponse toResponse(Reaction reaction) {
         User user = reaction.getUser();
+        String displayName = user.getName();
+        if (displayName == null || displayName.isBlank()) {
+            displayName = user.getEmail();
+        }
         return new ReactionResponse(reaction.getId(), reaction.getReactionType(), reaction.getEvent().getId(),
-                new ReactionUserSummary(user.getId(), user.getName()), reaction.getCreatedAt());
+                new ReactionUserSummary(user.getId(), displayName), reaction.getCreatedAt());
     }
 }

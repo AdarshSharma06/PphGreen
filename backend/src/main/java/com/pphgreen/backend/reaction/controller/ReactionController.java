@@ -43,8 +43,10 @@ public class ReactionController {
     }
 
     @DeleteMapping("/events/{eventId}/reactions")
-    public ResponseEntity<ApiResponse<Void>> removeReaction(@PathVariable Long eventId) {
-        reactionService.removeReaction(eventId, currentUserEmail());
+    public ResponseEntity<ApiResponse<Void>> removeReaction(
+            @PathVariable Long eventId,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) com.pphgreen.backend.reaction.entity.ReactionType reactionType) {
+        reactionService.removeReaction(eventId, currentUserEmail(), reactionType);
         return ResponseEntity.ok(ApiResponse.success("Reaction removed", null));
     }
 

@@ -20,10 +20,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.pphgreen.backend.common.exception.ForbiddenException;
 import com.pphgreen.backend.common.exception.ResourceNotFoundException;
+import com.pphgreen.backend.comment.repository.CommentRepository;
 import com.pphgreen.backend.event.dto.EventRequest;
 import com.pphgreen.backend.event.dto.EventResponse;
 import com.pphgreen.backend.event.entity.Event;
 import com.pphgreen.backend.event.repository.EventRepository;
+import com.pphgreen.backend.reaction.repository.ReactionRepository;
 import com.pphgreen.backend.user.entity.AccountStatus;
 import com.pphgreen.backend.user.entity.Role;
 import com.pphgreen.backend.user.entity.User;
@@ -38,11 +40,17 @@ class EventServiceTest {
     @Mock
     private UserService userService;
 
+    @Mock
+    private CommentRepository commentRepository;
+
+    @Mock
+    private ReactionRepository reactionRepository;
+
     private EventService eventService;
 
     @BeforeEach
     void setUp() {
-        eventService = new EventService(eventRepository, userService);
+        eventService = new EventService(eventRepository, userService, commentRepository, reactionRepository);
     }
 
     @Test

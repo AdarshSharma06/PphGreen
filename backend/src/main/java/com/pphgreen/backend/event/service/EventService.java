@@ -7,6 +7,9 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import org.springframework.transaction.annotation.Transactional;
+
+import com.pphgreen.backend.comment.repository.CommentRepository;
 import com.pphgreen.backend.common.exception.ForbiddenException;
 import com.pphgreen.backend.common.exception.ResourceNotFoundException;
 import com.pphgreen.backend.common.exception.UnauthorizedException;
@@ -15,6 +18,7 @@ import com.pphgreen.backend.event.dto.EventResponse;
 import com.pphgreen.backend.event.dto.EventUserSummary;
 import com.pphgreen.backend.event.entity.Event;
 import com.pphgreen.backend.event.repository.EventRepository;
+import com.pphgreen.backend.reaction.repository.ReactionRepository;
 import com.pphgreen.backend.user.entity.Role;
 import com.pphgreen.backend.user.entity.User;
 import com.pphgreen.backend.user.service.UserService;
@@ -24,10 +28,15 @@ public class EventService {
 
     private final EventRepository eventRepository;
     private final UserService userService;
+    private final CommentRepository commentRepository;
+    private final ReactionRepository reactionRepository;
 
-    public EventService(EventRepository eventRepository, UserService userService) {
+    public EventService(EventRepository eventRepository, UserService userService,
+                        CommentRepository commentRepository, ReactionRepository reactionRepository) {
         this.eventRepository = eventRepository;
         this.userService = userService;
+        this.commentRepository = commentRepository;
+        this.reactionRepository = reactionRepository;
     }
 
     public List<EventResponse> getAllEvents() {
@@ -67,9 +76,14 @@ public class EventService {
         return toResponse(findEvent(id));
     }
 
+    @Transactional
     public void deleteEvent(Long id, String actorEmail) {
         adminUser(actorEmail);
-        eventRepository.delete(findEvent(id));
+        Event event = findEvent(id);
+        // Delete child records first to avoid FK constraint violations
+        commentRepository.deleteByEventId(event.getId());
+        reactionRepository.deleteByEventId(event.getId());
+        eventRepository.delete(event);
     }
 
     private Event findEvent(Long id) {

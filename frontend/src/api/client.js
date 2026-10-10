@@ -184,7 +184,10 @@ export const reactionApi = {
   getByEvent: (eventId) => api.get(`/api/events/${eventId}/reactions`),
   add: (eventId, reactionType) =>
     api.post(`/api/events/${eventId}/reactions`, { reactionType }),
-  remove: (eventId) => api.delete(`/api/events/${eventId}/reactions`),
+  remove: (eventId, reactionType) => {
+    const qs = reactionType ? `?reactionType=${reactionType}` : '';
+    return api.delete(`/api/events/${eventId}/reactions${qs}`);
+  },
 };
 
 export const suggestionApi = {

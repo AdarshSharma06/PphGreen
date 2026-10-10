@@ -24,6 +24,8 @@ export default function EventDetail() {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [commentError, setCommentError] = useState('');
   const [submittingReaction, setSubmittingReaction] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const event = data?.data;
   const comments = commentsData?.data || [];
@@ -65,7 +67,7 @@ export default function EventDetail() {
     setSubmittingReaction(true);
     try {
       if (myReactionTypes.has(reactionType)) {
-        await reactionApi.remove(id);
+        await reactionApi.remove(id, reactionType);
       } else {
         await reactionApi.add(id, reactionType);
       }
@@ -77,10 +79,17 @@ export default function EventDetail() {
 
   const handleDelete = async () => {
     if (!window.confirm('Delete this event? This cannot be undone.')) return;
+    if (deleting) return;
+    setDeleting(true);
+    setDeleteError('');
     try {
       await eventApi.delete(id);
       navigate('/events');
-    } catch { /* delete may fail due to FK constraints */ }
+    } catch (err) {
+      setDeleteError(err.message || 'Failed to delete event');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   if (loading) {
@@ -150,7 +159,10 @@ export default function EventDetail() {
 
             {isAdmin && (
               <div className="event-detail-admin">
-                <button className="btn btn-danger btn-sm" onClick={handleDelete}>Delete Event</button>
+                {deleteError && <div className="alert alert-error" style={{ marginBottom: 'var(--space-3)' }}>{deleteError}</div>}
+                <button className="btn btn-danger btn-sm" onClick={handleDelete} disabled={deleting}>
+                  {deleting ? 'Deleting...' : 'Delete Event'}
+                </button>
               </div>
             )}
           </div>

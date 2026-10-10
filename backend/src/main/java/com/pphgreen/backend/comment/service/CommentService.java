@@ -80,8 +80,12 @@ public class CommentService {
 
     private CommentResponse toResponse(Comment comment) {
         User author = comment.getAuthor();
+        String displayName = author.getName();
+        if (displayName == null || displayName.isBlank()) {
+            displayName = author.getEmail();
+        }
         return new CommentResponse(comment.getId(), comment.getContent(), comment.getEvent().getId(),
-                new CommentUserSummary(author.getId(), author.getName()),
+                new CommentUserSummary(author.getId(), displayName),
                 comment.getCreatedAt(), comment.getUpdatedAt());
     }
 }
