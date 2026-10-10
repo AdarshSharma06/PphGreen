@@ -56,7 +56,7 @@ export default function GalleryAlbum() {
 
         <section className="highlights-section" style={{ marginTop: 'var(--space-8)' }}>
           <h2 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-4)' }}>Highlights</h2>
-          {highlightsLoading ? <div className="loading-container"><div className="loading-spinner" /></div> : <HighlightsCarousel items={highlights} />}
+          {highlightsLoading ? <div className="loading-container"><div className="loading-spinner" /></div> : <HighlightsCarousel items={highlights} onSelect={setLightbox} />}
         </section>
 
         <section className="all-photos-section" style={{ marginTop: 'var(--space-10)' }}>
@@ -165,45 +165,6 @@ function MediaCard({ item, isAdmin, onToggleHighlight, onLikeToggle, onOpen }) {
           </button>
         )}
       </div>
-      <PhotoCommentsInline galleryId={item.id} />
-    </div>
-  );
-}
-
-function PhotoCommentsInline({ galleryId }) {
-  const { data, refetch } = useApi(() => galleryApi.getComments(galleryId), [galleryId]);
-  const { isAuthenticated } = useAuth();
-  const [text, setText] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const comments = data?.data || [];
-  const preview = comments.slice(0, 2);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!text.trim() || submitting) return;
-    setSubmitting(true);
-    try {
-      await galleryApi.addComment(galleryId, text.trim());
-      setText('');
-      refetch();
-    } catch (_e) { void _e; } finally { setSubmitting(false); }
-  };
-
-  return (
-    <div className="photo-comments">
-      {preview.map((c) => (
-        <div key={c.id} className="comment-row">
-          <span className="comment-author-sm">{c.author?.name}</span>
-          <span className="comment-text-sm">{c.content}</span>
-        </div>
-      ))}
-      {comments.length > 2 && <span className="text-xs text-muted">+{comments.length - 2} more</span>}
-      {isAuthenticated && (
-        <form className="comment-inline-form" onSubmit={handleSubmit}>
-          <input className="input input-sm" placeholder="Add a comment..." value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} />
-          <button type="submit" className="btn btn-ghost btn-sm" disabled={submitting || !text.trim()}><Send size={14} /></button>
-        </form>
-      )}
     </div>
   );
 }

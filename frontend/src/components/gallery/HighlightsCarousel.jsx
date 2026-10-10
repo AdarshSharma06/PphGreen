@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function HighlightsCarousel({ items }) {
+export default function HighlightsCarousel({ items, onSelect }) {
   const [index, setIndex] = useState(0);
   const [failed, setFailed] = useState({});
   const containerRef = useRef(null);
@@ -92,19 +92,34 @@ export default function HighlightsCarousel({ items }) {
     >
       <div className="carousel-track" style={{ transform: `translateX(-${index * 100}%)` }}>
         {items.map((item) => (
-          <div key={item.id} className="carousel-slide">
+          <button
+            key={item.id}
+            className="carousel-slide"
+            onClick={() => onSelect && onSelect(item)}
+            aria-label={`View ${item.fileName}`}
+            style={{ cursor: onSelect ? 'pointer' : 'default', border: 'none', padding: 0 }}
+          >
             {failed[item.id] ? (
               <div className="carousel-fallback">
                 <span>Image unavailable</span>
                 <span className="text-xs">{item.fileName}</span>
               </div>
             ) : item.mediaType?.startsWith('video/') ? (
-              <video src={item.fileUrl} muted playsInline controls className="carousel-media" preload="metadata" onError={() => handleMediaError(item.id)} />
+              <video
+                src={item.fileUrl}
+                muted
+                playsInline
+                controls={false}
+                className="carousel-media"
+                preload="metadata"
+                onError={() => handleMediaError(item.id)}
+                onClick={(e) => { e.stopPropagation(); onSelect && onSelect(item); }}
+              />
             ) : (
               <img src={item.fileUrl} alt={item.fileName} className="carousel-media" loading="lazy" onError={() => handleMediaError(item.id)} />
             )}
             <div className="carousel-caption">{item.fileName}</div>
-          </div>
+          </button>
         ))}
       </div>
 
