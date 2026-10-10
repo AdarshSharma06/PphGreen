@@ -18,6 +18,7 @@ const FEATURED_PROGRAM = {
   schedule: 'Every Sunday',
   status: 'Recurring program',
   image: '/assets/programs/program_1.jpg',
+  focalPosition: 'center 35%',
 };
 
 const FUTURE_PROGRAM_TEMPLATES = [
@@ -77,6 +78,7 @@ export default function Programs() {
                 src={FEATURED_PROGRAM.image}
                 alt="Residents enjoying a Sunday nature walk among green trees"
                 loading="eager"
+                style={{ objectPosition: FEATURED_PROGRAM.focalPosition }}
                 onError={(e) => { e.currentTarget.src = '/assets/aesthetic/aesthetic.jpg'; }}
               />
               <div className="featured-badge">
@@ -138,7 +140,7 @@ export default function Programs() {
               <div key={program.id} className="program-card card">
                 {program.image ? (
                   <div className="program-card-image">
-                    <img src={program.image} alt={program.title} loading="lazy" onError={(e) => e.currentTarget.style.display = 'none'} />
+                    <img src={program.image} alt={program.title} loading="lazy" style={{ objectPosition: program.focalPosition || 'center center' }} onError={(e) => e.currentTarget.style.display = 'none'} />
                   </div>
                 ) : (
                   <div className="program-card-image program-card-image-fallback">
