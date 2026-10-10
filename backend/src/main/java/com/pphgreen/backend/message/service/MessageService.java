@@ -36,6 +36,7 @@ public class MessageService {
         this.userService = userService;
     }
 
+    @Transactional(readOnly = true)
     public List<ConversationResponse> listConversations(String currentEmail) {
         User current = userService.findByEmail(currentEmail).orElseThrow(() -> new UnauthorizedException("User not found"));
         List<Conversation> convs = conversationRepository.findByParticipantIdOrderByUpdatedAtDesc(current.getId());
@@ -72,6 +73,7 @@ public class MessageService {
         }
     }
 
+    @Transactional(readOnly = true)
     public List<DirectMessageResponse> getMessages(Long conversationId, Long cursor, Integer limit, String currentEmail) {
         User current = userService.findByEmail(currentEmail).orElseThrow(() -> new UnauthorizedException("User not found"));
         Conversation conv = conversationRepository.findWithParticipantsById(conversationId).orElseThrow(() -> new ResourceNotFoundException("Conversation", conversationId));
@@ -80,11 +82,11 @@ public class MessageService {
         Pageable pageable = PageRequest.of(0, lim);
         List<DirectMessage> msgs;
         if (cursor == null) {
-            msgs = messageRepository.findLatestByConversationId(conversationId, pageable);
+            msgs = new java.util.ArrayList<>(messageRepository.findLatestByConversationId(conversationId, pageable));
             // reverse to ASC for display (oldest first, newest last) — but for messages we want chronological ASC
             java.util.Collections.reverse(msgs);
         } else {
-            msgs = messageRepository.findByConversationIdAndIdLessThanOrderByIdDesc(conversationId, cursor, pageable);
+            msgs = new java.util.ArrayList<>(messageRepository.findByConversationIdAndIdLessThanOrderByIdDesc(conversationId, cursor, pageable));
             java.util.Collections.reverse(msgs);
         }
         return msgs.stream().map(this::toMessageResponse).collect(Collectors.toList());

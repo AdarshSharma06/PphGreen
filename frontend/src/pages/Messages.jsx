@@ -113,12 +113,14 @@ function ConversationView({ conversation, onBack, onRead, currentUserId }) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [text, setText] = useState('');
-  const [error, setError] = useState('');
+  const [fetchError, setFetchError] = useState('');
+  const [sendError, setSendError] = useState('');
   const listRef = useRef(null);
   const [loadingMore, setLoadingMore] = useState(false);
 
   const fetchMessages = useCallback(async (cur, isInitial = false) => {
     try {
+      if (isInitial) setFetchError('');
       const res = await messageApi.getMessages(conversation.id, cur, 30);
       const data = res.data || [];
       if (isInitial) {
@@ -142,18 +144,21 @@ function ConversationView({ conversation, onBack, onRead, currentUserId }) {
         });
       }
     } catch (err) {
-      setError(err.message || 'Failed to load messages');
+      setFetchError(err.message || 'Failed to load messages');
     }
   }, [conversation.id]);
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
+    setFetchError('');
     setMessages([]);
     setCursor(null);
     setHasMore(true);
-    fetchMessages(null, true).finally(() => setLoading(false));
-    // mark read
-    messageApi.markRead(conversation.id).catch(() => {}).then(() => onRead());
+    fetchMessages(null, true).finally(() => { if (!cancelled) setLoading(false); });
+    // mark read independently — failure must not clear messages or set fetchError
+    messageApi.markRead(conversation.id).catch(() => {}).then(() => { if (!cancelled) onRead(); });
+    return () => { cancelled = true; };
   }, [conversation.id, fetchMessages, onRead]);
 
   // polling for new messages
@@ -201,9 +206,9 @@ function ConversationView({ conversation, onBack, onRead, currentUserId }) {
   const handleSend = async (e) => {
     e.preventDefault();
     if (!text.trim() || sending) return;
-    if (text.length > 2000) { setError('Message too long'); return; }
+    if (text.length > 2000) { setSendError('Message too long'); return; }
     setSending(true);
-    setError('');
+    setSendError('');
     const content = text.trim();
     setText('');
     try {
@@ -211,7 +216,7 @@ function ConversationView({ conversation, onBack, onRead, currentUserId }) {
       setMessages((prev) => [...prev, res.data]);
       setTimeout(() => { if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight; }, 50);
     } catch (err) {
-      setError(err.message || 'Failed to send');
+      setSendError(err.message || 'Failed to send');
       setText(content);
     } finally {
       setSending(false);
@@ -230,19 +235,28 @@ function ConversationView({ conversation, onBack, onRead, currentUserId }) {
 
       <div className="messages-list" ref={listRef} onScroll={handleScroll}>
         {loading && <div className="loading-container"><div className="loading-spinner" /></div>}
+        {fetchError && (
+          <div className="alert alert-error text-sm" style={{ margin: 'var(--space-2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>{fetchError}</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => fetchMessages(null, true)}>Retry</button>
+          </div>
+        )}
+        {!loading && !fetchError && messages.length === 0 && (
+          <div className="text-sm text-muted" style={{ textAlign: 'center', padding: 'var(--space-4)' }}>No messages yet. Say hello!</div>
+        )}
         {loadingMore && <div className="text-xs text-muted" style={{ textAlign: 'center' }}>Loading older messages...</div>}
         {messages.map((m) => {
           const isOwn = m.senderId === currentUserId;
           return (
             <div key={m.id} className={`message-bubble ${isOwn ? 'own' : 'other'}`}>
               <div className="message-content">{m.content}</div>
-              <div className="message-time">{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} {m.readAt ? '· Read' : ''}</div>
+              <div className="message-time">{m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''} {m.readAt ? '· Read' : ''}</div>
             </div>
           );
         })}
       </div>
 
-      {error && <div className="alert alert-error text-sm" style={{ margin: 'var(--space-2)' }}>{error}</div>}
+      {sendError && <div className="alert alert-error text-sm" style={{ margin: 'var(--space-2)' }}>{sendError}</div>}
 
       <form className="composer-bar" onSubmit={handleSend}>
         <input className="input" placeholder="Type a message..." value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} />
