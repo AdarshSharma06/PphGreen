@@ -287,10 +287,12 @@
 }
 .carousel-slide {
   min-width: 100%;
+  flex: 0 0 100%;
   position: relative;
-}
-@media (min-width: 768px) {
-  .carousel-slide { min-width: 50%; }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--green-50);
 }
 .carousel-media {
   width: 100%;
@@ -343,7 +345,20 @@
 }
 .carousel-dot.active { background: white; }
 .carousel-empty { padding: var(--space-12); text-align: center; color: var(--text-muted); }
+.carousel-fallback {
+  width: 100%;
+  height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background: var(--green-50);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
 .carousel-single .carousel-media { height: 360px; }
+.carousel-single .carousel-fallback { height: 360px; }
 
 .back-link {
   display: inline-flex;
@@ -354,6 +369,118 @@
   margin-bottom: var(--space-4);
 }
 .back-link:hover { color: var(--green-600); }
+
+/* Gallery image viewer — responsive */
+.gallery-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: var(--space-4);
+  animation: fadeIn 0.2s ease;
+}
+.gallery-viewer {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  background: white;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  width: min(1100px, 95vw);
+  max-height: 90vh;
+  max-width: 95vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.viewer-close {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  z-index: 10;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.viewer-close:hover { background: rgba(0,0,0,0.8); }
+.viewer-media {
+  flex: 1 1 60%;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  max-height: 90vh;
+  overflow: hidden;
+}
+.viewer-media-element {
+  max-width: 100%;
+  max-height: 85vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+.viewer-panel {
+  flex: 0 0 380px;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  background: white;
+  border-left: 1px solid var(--border-light);
+}
+.viewer-header {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+.viewer-title { font-size: var(--text-base); font-weight: 600; margin: 0; }
+.viewer-subtitle { font-size: var(--text-sm); color: var(--text-muted); margin-top: var(--space-1); }
+.viewer-comments { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.viewer-comments-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.viewer-comments-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-3);
+  min-height: 120px;
+}
+.viewer-comment { padding: var(--space-3) 0; border-bottom: 1px solid var(--border-light); }
+.viewer-comment:last-child { border-bottom: none; }
+.viewer-comment-header { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1); }
+.viewer-comment-author { font-weight: 600; font-size: var(--text-sm); }
+.viewer-comment-time { font-size: var(--text-xs); color: var(--text-muted); flex: 1; }
+.viewer-comment-delete { color: var(--text-muted); border: none; background: none; cursor: pointer; padding: 4px; border-radius: var(--radius-sm); }
+.viewer-comment-delete:hover { background: var(--green-50); color: var(--error, #dc2626); }
+.viewer-comment-text { font-size: var(--text-sm); color: var(--text-primary); line-height: 1.5; margin: 0; }
+.viewer-composer {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-top: 1px solid var(--border-light);
+  background: white;
+  flex-shrink: 0;
+}
+.viewer-composer-input { flex: 1; }
+.viewer-composer-btn { white-space: nowrap; }
+@media (max-width: 768px) {
+  .gallery-viewer { flex-direction: column; max-height: 95vh; width: 95vw; overflow: hidden; }
+  .viewer-media { flex: 0 0 auto; max-height: 45vh; min-height: 200px; }
+  .viewer-media-element { max-height: 45vh; }
+  .viewer-panel { flex: 1 1 auto; max-height: 50vh; border-left: none; border-top: 1px solid var(--border-light); min-height: 200px; }
+}
 
 @media (max-width: 768px) {
   .gallery-masonry {

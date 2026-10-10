@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function HighlightsCarousel({ items }) {
   const [index, setIndex] = useState(0);
+  const [failed, setFailed] = useState({});
   const containerRef = useRef(null);
   const intervalRef = useRef(null);
   const pausedRef = useRef(false);
@@ -10,6 +11,7 @@ export default function HighlightsCarousel({ items }) {
   const prefersReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const count = items.length;
+  const handleMediaError = (id) => setFailed((prev) => ({ ...prev, [id]: true }));
 
   const next = useCallback(() => {
     setIndex((i) => (i + 1) % count);
@@ -58,12 +60,17 @@ export default function HighlightsCarousel({ items }) {
   }
   if (count === 1) {
     const item = items[0];
+    const isFailed = failed[item.id];
     return (
       <div className="carousel-single">
-        {item.mediaType?.startsWith('video/') ? (
-          <video src={item.fileUrl} controls className="carousel-media" />
+        {isFailed ? (
+          <div className="carousel-fallback">
+            <span>Image unavailable</span>
+          </div>
+        ) : item.mediaType?.startsWith('video/') ? (
+          <video src={item.fileUrl} controls className="carousel-media" onError={() => handleMediaError(item.id)} />
         ) : (
-          <img src={item.fileUrl} alt={item.fileName} className="carousel-media" loading="eager" />
+          <img src={item.fileUrl} alt={item.fileName} className="carousel-media" loading="eager" onError={() => handleMediaError(item.id)} />
         )}
       </div>
     );
@@ -86,10 +93,15 @@ export default function HighlightsCarousel({ items }) {
       <div className="carousel-track" style={{ transform: `translateX(-${index * 100}%)` }}>
         {items.map((item) => (
           <div key={item.id} className="carousel-slide">
-            {item.mediaType?.startsWith('video/') ? (
-              <video src={item.fileUrl} muted playsInline controls className="carousel-media" preload="metadata" />
+            {failed[item.id] ? (
+              <div className="carousel-fallback">
+                <span>Image unavailable</span>
+                <span className="text-xs">{item.fileName}</span>
+              </div>
+            ) : item.mediaType?.startsWith('video/') ? (
+              <video src={item.fileUrl} muted playsInline controls className="carousel-media" preload="metadata" onError={() => handleMediaError(item.id)} />
             ) : (
-              <img src={item.fileUrl} alt={item.fileName} className="carousel-media" loading="lazy" />
+              <img src={item.fileUrl} alt={item.fileName} className="carousel-media" loading="lazy" onError={() => handleMediaError(item.id)} />
             )}
             <div className="carousel-caption">{item.fileName}</div>
           </div>
