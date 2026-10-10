@@ -12,8 +12,13 @@ export default function Gallery() {
   const { data, loading, error, refetch } = useApi(() => galleryApi.getAll(), []);
   const [lightbox, setLightbox] = useState(null);
   const [showUpload, setShowUpload] = useState(false);
+  const [mediaErrors, setMediaErrors] = useState({});
 
   const items = data?.data || [];
+
+  const handleMediaError = (id) => {
+    setMediaErrors((prev) => ({ ...prev, [id]: true }));
+  };
 
   return (
     <div className="gallery-page">
@@ -25,7 +30,7 @@ export default function Gallery() {
           </div>
           {isAdmin && (
             <button className="btn btn-primary" onClick={() => setShowUpload(true)}>
-              <Upload size={16} /> Upload
+              <Upload size={16} /> Add Media
             </button>
           )}
         </div>
@@ -37,9 +42,14 @@ export default function Gallery() {
           </div>
         )}
 
-        {error && <div className="alert alert-error">{error}</div>}
+        {error && (
+          <div className="alert alert-error" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+            <span>{error}</span>
+            <button className="btn btn-secondary btn-sm" onClick={refetch}>Retry</button>
+          </div>
+        )}
 
-        {!loading && items.length === 0 && (
+        {!loading && !error && items.length === 0 && (
           <EmptyState
             icon={ImageIcon}
             title="Gallery is empty"
@@ -47,7 +57,7 @@ export default function Gallery() {
           />
         )}
 
-        {items.length > 0 && (
+        {!loading && !error && items.length > 0 && (
           <div className="gallery-masonry">
             {items.map((item, index) => (
               <button
@@ -56,15 +66,20 @@ export default function Gallery() {
                 onClick={() => setLightbox(item)}
                 aria-label={`View ${item.fileName}`}
               >
-                {item.mediaType?.startsWith('video/') ? (
+                {mediaErrors[item.id] ? (
+                  <div className="gallery-item-fallback" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)', color: 'var(--text-muted)', background: 'var(--green-50)', padding: 'var(--space-4)' }}>
+                    <ImageIcon size={28} strokeWidth={1.5} />
+                    <span style={{ fontSize: 'var(--text-xs)', textAlign: 'center' }}>Unable to load media</span>
+                  </div>
+                ) : item.mediaType?.startsWith('video/') ? (
                   <div className="gallery-item-video">
-                    <video src={item.fileUrl} muted playsInline preload="metadata" />
+                    <video src={item.fileUrl} muted playsInline preload="metadata" onError={() => handleMediaError(item.id)} />
                     <div className="gallery-item-play">
                       <Play size={24} fill="white" />
                     </div>
                   </div>
                 ) : (
-                  <img src={item.fileUrl} alt={item.fileName} loading="lazy" />
+                  <img src={item.fileUrl} alt={item.fileName} loading="lazy" onError={() => handleMediaError(item.id)} />
                 )}
               </button>
             ))}
@@ -111,9 +126,19 @@ function GalleryUploadModal({ onClose, onUploaded }) {
     if (!selected) return;
     setFile(selected);
     setError('');
+    if (preview) URL.revokeObjectURL(preview);
     if (selected.type.startsWith('image/') || selected.type.startsWith('video/')) {
       setPreview(URL.createObjectURL(selected));
+    } else {
+      setPreview(null);
     }
+  };
+
+  const handleRemove = () => {
+    if (preview) URL.revokeObjectURL(preview);
+    setFile(null);
+    setPreview(null);
+    setError('');
   };
 
   const handleUpload = async () => {
@@ -126,6 +151,7 @@ function GalleryUploadModal({ onClose, onUploaded }) {
     setError('');
     try {
       await galleryApi.upload(file);
+      if (preview) URL.revokeObjectURL(preview);
       onUploaded();
     } catch (err) {
       setError(err.message || 'Upload failed');
@@ -135,10 +161,10 @@ function GalleryUploadModal({ onClose, onUploaded }) {
   };
 
   return (
-    <Modal isOpen={true} onClose={onClose} title="Upload to Gallery"
+    <Modal isOpen={true} onClose={onClose} title="Add Media"
       footer={
         <>
-          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-secondary" onClick={onClose} disabled={uploading}>Cancel</button>
           <button className="btn btn-primary" onClick={handleUpload} disabled={!file || uploading}>
             {uploading ? 'Uploading...' : 'Upload'}
           </button>
@@ -147,14 +173,25 @@ function GalleryUploadModal({ onClose, onUploaded }) {
     >
       {error && <div className="alert alert-error mb-4">{error}</div>}
       <div className="upload-area">
-        {preview ? (
+        {file ? (
           <div className="upload-preview">
-            {file?.type?.startsWith('video/') ? (
-              <video src={preview} className="upload-preview-media" />
+            {preview ? (
+              file?.type?.startsWith('video/') ? (
+                <video src={preview} className="upload-preview-media" />
+              ) : (
+                <img src={preview} alt="Preview" className="upload-preview-media" />
+              )
             ) : (
-              <img src={preview} alt="Preview" className="upload-preview-media" />
+              <div style={{ padding: 'var(--space-6)', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <ImageIcon size={32} strokeWidth={1.5} style={{ margin: '0 auto' }} />
+                <p className="text-sm" style={{ marginTop: 'var(--space-2)' }}>{file.name}</p>
+              </div>
             )}
-            <button className="upload-preview-remove" onClick={() => { setFile(null); setPreview(null); }}>
+            <div style={{ padding: 'var(--space-2) var(--space-3)', fontSize: 'var(--text-xs)', color: 'var(--text-muted)', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="truncate" style={{ maxWidth: '70%' }}>{file.name} — {(file.size / 1024 / 1024).toFixed(2)} MB</span>
+              <span>{file.type}</span>
+            </div>
+            <button className="upload-preview-remove" onClick={handleRemove}>
               <X size={16} /> Remove
             </button>
           </div>

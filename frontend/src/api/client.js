@@ -1,4 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL;
+const DEFAULT_TIMEOUT_MS = 15000;
+const UPLOAD_TIMEOUT_MS = 60000;
 
 class ApiClient {
   constructor() {
@@ -10,21 +12,27 @@ class ApiClient {
   }
 
   async request(endpoint, options = {}) {
-    const { method = 'GET', body, headers = {}, raw = false } = options;
+    const { method = 'GET', body, headers = {}, raw = false, timeoutMs } = options;
     const token = this.getToken();
+
+    const isUpload = body instanceof FormData;
+    const timeout = timeoutMs ?? (isUpload ? UPLOAD_TIMEOUT_MS : DEFAULT_TIMEOUT_MS);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     const config = {
       method,
       headers: {
         ...headers,
       },
+      signal: controller.signal,
     };
 
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
 
-    if (body instanceof FormData) {
+    if (isUpload) {
       delete config.headers['Content-Type'];
       config.body = body;
     } else if (body) {
@@ -32,7 +40,17 @@ class ApiClient {
       config.body = JSON.stringify(body);
     }
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, config);
+    let response;
+    try {
+      response = await fetch(`${this.baseUrl}${endpoint}`, config);
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        throw new ApiError('Request timed out. Please check your connection and try again.', 408);
+      }
+      throw new ApiError(err.message || 'Network error. Please check your connection.', 0);
+    }
+    clearTimeout(timeoutId);
 
     if (response.status === 401) {
       localStorage.removeItem('token');
@@ -52,7 +70,18 @@ class ApiClient {
       return response.text();
     }
 
-    const data = await response.json();
+    let data;
+    const contentType = response.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
+    try {
+      data = await response.json();
+    } catch {
+      if (!response.ok) {
+        const fallback = isJson ? 'An error occurred' : 'Service temporarily unavailable. Please try again.';
+        throw new ApiError(fallback, response.status);
+      }
+      throw new ApiError('Service temporarily unavailable. Please try again.', response.status);
+    }
 
     if (!response.ok) {
       const message = data.message || 'An error occurred';
