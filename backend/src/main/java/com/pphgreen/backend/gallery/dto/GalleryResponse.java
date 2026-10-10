@@ -8,5 +8,10 @@ public record GalleryResponse(
         String mediaType,
         String fileUrl,
         GalleryUserSummary uploadedBy,
-        Instant createdAt) {
+        Instant createdAt,
+        Long eventId,
+        Boolean highlight,
+        Integer highlightOrder,
+        long likeCount,
+        boolean likedByCurrentUser) {
 }

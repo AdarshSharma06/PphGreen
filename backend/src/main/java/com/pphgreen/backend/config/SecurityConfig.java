@@ -34,8 +34,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/events").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/events/{id}").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/events/{id}").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/gallery/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/gallery").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/gallery").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/gallery/*/highlight").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/programs").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/programs/{id}").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/programs").hasRole("ADMIN")
@@ -50,6 +52,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/suggestions").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/suggestions").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/suggestions/{id}").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/gallery/*/likes").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/gallery/*/likes").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/gallery/*/comments").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/gallery/comments/*").authenticated()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

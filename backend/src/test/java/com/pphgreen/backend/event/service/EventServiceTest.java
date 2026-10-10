@@ -25,7 +25,10 @@ import com.pphgreen.backend.event.dto.EventRequest;
 import com.pphgreen.backend.event.dto.EventResponse;
 import com.pphgreen.backend.event.entity.Event;
 import com.pphgreen.backend.event.repository.EventRepository;
+import com.pphgreen.backend.gallery.entity.Gallery;
+import com.pphgreen.backend.gallery.repository.GalleryRepository;
 import com.pphgreen.backend.reaction.repository.ReactionRepository;
+import com.pphgreen.backend.storage.StorageService;
 import com.pphgreen.backend.user.entity.AccountStatus;
 import com.pphgreen.backend.user.entity.Role;
 import com.pphgreen.backend.user.entity.User;
@@ -46,11 +49,19 @@ class EventServiceTest {
     @Mock
     private ReactionRepository reactionRepository;
 
+    @Mock
+    private GalleryRepository galleryRepository;
+
+    @Mock
+    private StorageService storageService;
+
     private EventService eventService;
 
     @BeforeEach
     void setUp() {
-        eventService = new EventService(eventRepository, userService, commentRepository, reactionRepository);
+        eventService = new EventService(eventRepository, userService, commentRepository, reactionRepository, galleryRepository, storageService);
+        // default stub for gallery lookup — no media (lenient, not all tests call delete)
+        org.mockito.Mockito.lenient().when(galleryRepository.findByEventIdWithUploader(any())).thenReturn(List.of());
     }
 
     @Test
@@ -144,6 +155,79 @@ class EventServiceTest {
         eventService.deleteEvent(1L, "admin@example.com");
 
         verify(eventRepository).delete(event);
+    }
+
+    @Test
+    void deleteEventWithMultipleMediaDeletesAllStorageObjects() {
+        User admin = adminUser();
+        Event event = sampleEvent();
+        Gallery g1 = new Gallery(); g1.setStoragePath("gallery/a.jpg"); g1.setFileName("a.jpg");
+        Gallery g2 = new Gallery(); g2.setStoragePath("gallery/b.mp4"); g2.setFileName("b.mp4");
+        when(userService.findByEmail("admin@example.com")).thenReturn(Optional.of(admin));
+        when(eventRepository.findWithCreatedBy(1L)).thenReturn(Optional.of(event));
+        when(galleryRepository.findByEventIdWithUploader(1L)).thenReturn(List.of(g1, g2));
+
+        eventService.deleteEvent(1L, "admin@example.com");
+
+        verify(storageService).delete("gallery/a.jpg");
+        verify(storageService).delete("gallery/b.mp4");
+        verify(galleryRepository).deleteByEventId(1L);
+        verify(eventRepository).delete(event);
+    }
+
+    @Test
+    void deleteEventStorageFailureStillDeletesDatabaseRecords() {
+        User admin = adminUser();
+        Event event = sampleEvent();
+        Gallery g1 = new Gallery(); g1.setStoragePath("gallery/a.jpg");
+        Gallery g2 = new Gallery(); g2.setStoragePath("gallery/b.jpg");
+        when(userService.findByEmail("admin@example.com")).thenReturn(Optional.of(admin));
+        when(eventRepository.findWithCreatedBy(1L)).thenReturn(Optional.of(event));
+        when(galleryRepository.findByEventIdWithUploader(1L)).thenReturn(List.of(g1, g2));
+        // first delete succeeds, second throws
+        org.mockito.Mockito.doNothing().doThrow(new RuntimeException("Supabase down")).when(storageService).delete(any());
+
+        eventService.deleteEvent(1L, "admin@example.com");
+
+        // DB deletions still happen despite storage failure
+        verify(galleryRepository).deleteByEventId(1L);
+        verify(eventRepository).delete(event);
+        verify(storageService).delete("gallery/a.jpg");
+        verify(storageService).delete("gallery/b.jpg");
+    }
+
+    @Test
+    void deleteEventWithNoMediaDoesNotCallStorage() {
+        User admin = adminUser();
+        Event event = sampleEvent();
+        when(userService.findByEmail("admin@example.com")).thenReturn(Optional.of(admin));
+        when(eventRepository.findWithCreatedBy(1L)).thenReturn(Optional.of(event));
+        when(galleryRepository.findByEventIdWithUploader(1L)).thenReturn(List.of());
+
+        eventService.deleteEvent(1L, "admin@example.com");
+
+        verify(storageService, never()).delete(any());
+        verify(galleryRepository).deleteByEventId(1L);
+        verify(eventRepository).delete(event);
+    }
+
+    @Test
+    void deleteEventDoesNotDeleteStandaloneMedia() {
+        // verify standalone (event_id null) not included when deleting event 1
+        User admin = adminUser();
+        Event event = sampleEvent();
+        when(userService.findByEmail("admin@example.com")).thenReturn(Optional.of(admin));
+        when(eventRepository.findWithCreatedBy(1L)).thenReturn(Optional.of(event));
+        // only event 1 media returned
+        Gallery eventMedia = new Gallery(); eventMedia.setStoragePath("gallery/event1.jpg");
+        when(galleryRepository.findByEventIdWithUploader(1L)).thenReturn(List.of(eventMedia));
+
+        eventService.deleteEvent(1L, "admin@example.com");
+
+        verify(storageService).delete("gallery/event1.jpg");
+        verify(galleryRepository).deleteByEventId(1L);
+        // standalone media never fetched nor deleted
+        verify(galleryRepository, never()).deleteByEventId(999L);
     }
 
     @Test

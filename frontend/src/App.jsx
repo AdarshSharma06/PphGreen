@@ -9,6 +9,7 @@ import Register from './pages/Register';
 import Events from './pages/Events';
 import EventDetail from './pages/EventDetail';
 import Gallery from './pages/Gallery';
+import GalleryAlbum from './pages/GalleryAlbum';
 import Programs from './pages/Programs';
 import About from './pages/About';
 import Developer from './pages/Developer';
@@ -40,6 +41,7 @@ export default function App() {
               <Route path="events/:id" element={<ProtectedRoute><Helmet><title>Event - PPH Green</title></Helmet><EventDetail /></ProtectedRoute>} />
 
               <Route path="gallery" element={<><Helmet><title>Gallery - PPH Green</title></Helmet><Gallery /></>} />
+              <Route path="gallery/event/:eventId" element={<><Helmet><title>Album - PPH Green</title></Helmet><GalleryAlbum /></>} />
               <Route path="programs" element={<><Helmet><title>Programs - PPH Green</title></Helmet><Programs /></>} />
               <Route path="about" element={<><Helmet><title>About Us - PPH Green</title></Helmet><About /></>} />
               <Route path="developer" element={<><Helmet><title>Developer - PPH Green</title></Helmet><Developer /></>} />

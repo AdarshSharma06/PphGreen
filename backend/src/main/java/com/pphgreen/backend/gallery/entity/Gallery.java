@@ -2,6 +2,7 @@ package com.pphgreen.backend.gallery.entity;
 
 import java.time.Instant;
 
+import com.pphgreen.backend.event.entity.Event;
 import com.pphgreen.backend.user.entity.User;
 
 import jakarta.persistence.Column;
@@ -38,6 +39,16 @@ public class Gallery {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uploaded_by", nullable = false)
     private User uploadedBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "event_id")
+    private Event event;
+
+    @Column(name = "is_highlight", nullable = false)
+    private Boolean highlight = false;
+
+    @Column(name = "highlight_order")
+    private Integer highlightOrder;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -93,6 +104,30 @@ public class Gallery {
 
     public void setUploadedBy(User uploadedBy) {
         this.uploadedBy = uploadedBy;
+    }
+
+    public Event getEvent() {
+        return event;
+    }
+
+    public void setEvent(Event event) {
+        this.event = event;
+    }
+
+    public Boolean getHighlight() {
+        return highlight;
+    }
+
+    public void setHighlight(Boolean highlight) {
+        this.highlight = highlight;
+    }
+
+    public Integer getHighlightOrder() {
+        return highlightOrder;
+    }
+
+    public void setHighlightOrder(Integer highlightOrder) {
+        this.highlightOrder = highlightOrder;
     }
 
     public Instant getCreatedAt() {

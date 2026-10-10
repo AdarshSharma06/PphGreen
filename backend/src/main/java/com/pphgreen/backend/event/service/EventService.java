@@ -4,7 +4,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +21,10 @@ import com.pphgreen.backend.event.dto.EventResponse;
 import com.pphgreen.backend.event.dto.EventUserSummary;
 import com.pphgreen.backend.event.entity.Event;
 import com.pphgreen.backend.event.repository.EventRepository;
+import com.pphgreen.backend.gallery.entity.Gallery;
+import com.pphgreen.backend.gallery.repository.GalleryRepository;
 import com.pphgreen.backend.reaction.repository.ReactionRepository;
+import com.pphgreen.backend.storage.StorageService;
 import com.pphgreen.backend.user.entity.Role;
 import com.pphgreen.backend.user.entity.User;
 import com.pphgreen.backend.user.service.UserService;
@@ -26,17 +32,31 @@ import com.pphgreen.backend.user.service.UserService;
 @Service
 public class EventService {
 
+    private static final Logger log = LoggerFactory.getLogger(EventService.class);
+
     private final EventRepository eventRepository;
     private final UserService userService;
     private final CommentRepository commentRepository;
     private final ReactionRepository reactionRepository;
+    private final GalleryRepository galleryRepository;
+    private final StorageService storageService;
 
     public EventService(EventRepository eventRepository, UserService userService,
-                        CommentRepository commentRepository, ReactionRepository reactionRepository) {
+                        CommentRepository commentRepository, ReactionRepository reactionRepository,
+                        GalleryRepository galleryRepository, StorageService storageService) {
         this.eventRepository = eventRepository;
         this.userService = userService;
         this.commentRepository = commentRepository;
         this.reactionRepository = reactionRepository;
+        this.galleryRepository = galleryRepository;
+        this.storageService = storageService;
+    }
+
+    // Backward compatible constructor for existing tests that mock only 4 repos
+    public EventService(EventRepository eventRepository, UserService userService,
+                        CommentRepository commentRepository, ReactionRepository reactionRepository,
+                        GalleryRepository galleryRepository) {
+        this(eventRepository, userService, commentRepository, reactionRepository, galleryRepository, null);
     }
 
     public List<EventResponse> getAllEvents() {
@@ -76,14 +96,53 @@ public class EventService {
         return toResponse(findEvent(id));
     }
 
-    @Transactional
     public void deleteEvent(Long id, String actorEmail) {
         adminUser(actorEmail);
         Event event = findEvent(id);
-        // Delete child records first to avoid FK constraint violations
-        commentRepository.deleteByEventId(event.getId());
-        reactionRepository.deleteByEventId(event.getId());
+        List<String> storagePaths = List.of();
+        if (galleryRepository != null) {
+            try {
+                List<Gallery> media = galleryRepository.findByEventIdWithUploader(id);
+                if (media != null) {
+                    storagePaths = media.stream()
+                            .map(Gallery::getStoragePath)
+                            .filter(p -> p != null && !p.isBlank())
+                            .collect(Collectors.toList());
+                }
+            } catch (Exception e) {
+                log.warn("Failed to collect gallery storage paths for event {}: {}", id, e.getMessage());
+            }
+        }
+        deleteEventData(event);
+        // Best-effort storage cleanup after DB commit — cannot be rolled back
+        // Only objects for this event_id are targeted; standalone media never included
+        if (storageService != null && !storagePaths.isEmpty()) {
+            for (String path : storagePaths) {
+                try {
+                    storageService.delete(path);
+                } catch (RuntimeException e) {
+                    log.error("Failed to delete gallery storage object for event {} path {}: {}. Manual cleanup may be required for bucket path '{}'",
+                            id, sanitizePath(path), e.getMessage(), path);
+                }
+            }
+        }
+    }
+
+    @Transactional
+    void deleteEventData(Event event) {
+        Long id = event.getId();
+        commentRepository.deleteByEventId(id);
+        reactionRepository.deleteByEventId(id);
+        if (galleryRepository != null) {
+            galleryRepository.deleteByEventId(id);
+        }
         eventRepository.delete(event);
+    }
+
+    private String sanitizePath(String path) {
+        if (path == null) return "(null)";
+        // expose only prefix/length, not credentials
+        return path.length() > 80 ? path.substring(0, 80) + "..." : path;
     }
 
     private Event findEvent(Long id) {

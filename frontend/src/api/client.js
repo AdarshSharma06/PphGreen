@@ -166,8 +166,30 @@ export const programApi = {
 };
 
 export const galleryApi = {
-  getAll: () => api.get('/api/gallery'),
-  upload: (file) => api.upload('/api/gallery', file),
+  getAll: (eventId) => api.get(eventId ? `/api/gallery?eventId=${eventId}` : '/api/gallery'),
+  getAlbums: () => api.get('/api/gallery/albums'),
+  getByEvent: (eventId) => api.get(`/api/gallery/events/${eventId}/media`),
+  getStandalone: () => api.get('/api/gallery/standalone'),
+  getHighlights: (eventId) => api.get(`/api/gallery/events/${eventId}/highlights`),
+  upload: (file, eventId) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const qs = eventId ? `?eventId=${eventId}` : '';
+    return api.request(`/api/gallery${qs}`, { method: 'POST', body: formData });
+  },
+  toggleHighlight: (id, highlight, order) => {
+    const params = new URLSearchParams();
+    if (highlight !== undefined && highlight !== null) params.set('highlight', highlight);
+    if (order !== undefined && order !== null) params.set('order', order);
+    const qs = params.toString() ? `?${params}` : '';
+    return api.request(`/api/gallery/${id}/highlight${qs}`, { method: 'PUT' });
+  },
+  like: (id) => api.post(`/api/gallery/${id}/likes`),
+  unlike: (id) => api.delete(`/api/gallery/${id}/likes`),
+  getLikeCount: (id) => api.get(`/api/gallery/${id}/likes`),
+  getComments: (id) => api.get(`/api/gallery/${id}/comments`),
+  addComment: (id, content) => api.post(`/api/gallery/${id}/comments`, { content }),
+  deleteComment: (commentId) => api.delete(`/api/gallery/comments/${commentId}`),
 };
 
 export const developerApi = {
