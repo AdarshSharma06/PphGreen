@@ -228,3 +228,46 @@ export const adminApi = {
   approve: (id, note) => api.post(`/api/admin/approve/${id}`, note ? { note } : undefined),
   reject: (id, note) => api.post(`/api/admin/reject/${id}`, note ? { note } : undefined),
 };
+
+export const communityApi = {
+  getPosts: (cursor, limit) => {
+    const params = new URLSearchParams();
+    if (cursor) params.set('cursor', cursor);
+    if (limit) params.set('limit', limit);
+    const qs = params.toString() ? `?${params}` : '';
+    return api.get(`/api/community/posts${qs}`);
+  },
+  createPost: (content, images) => {
+    const formData = new FormData();
+    formData.append('content', content);
+    if (images && images.length) {
+      images.forEach((file) => formData.append('images', file));
+    }
+    return api.request('/api/community/posts', { method: 'POST', body: formData });
+  },
+  getComments: (postId) => api.get(`/api/community/posts/${postId}/comments`),
+  addComment: (postId, content) => api.post(`/api/community/posts/${postId}/comments`, { content }),
+  deleteComment: (postId, commentId) => api.delete(`/api/community/posts/${postId}/comments/${commentId}`),
+  searchMembers: (q, cursor, limit) => {
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (cursor) params.set('cursor', cursor);
+    if (limit) params.set('limit', limit);
+    const qs = params.toString() ? `?${params}` : '';
+    return api.get(`/api/community/members${qs}`);
+  },
+};
+
+export const messageApi = {
+  getConversations: () => api.get('/api/messages/conversations'),
+  createConversation: (otherUserId) => api.post('/api/messages/conversations', { otherUserId }),
+  getMessages: (conversationId, cursor, limit) => {
+    const params = new URLSearchParams();
+    if (cursor) params.set('cursor', cursor);
+    if (limit) params.set('limit', limit);
+    const qs = params.toString() ? `?${params}` : '';
+    return api.get(`/api/messages/conversations/${conversationId}/messages${qs}`);
+  },
+  sendMessage: (conversationId, content) => api.post(`/api/messages/conversations/${conversationId}/messages`, { content }),
+  markRead: (conversationId) => api.post(`/api/messages/conversations/${conversationId}/read`),
+};

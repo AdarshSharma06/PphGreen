@@ -3,7 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import useClickOutside from '../../hooks/useClickOutside';
 import { notificationApi } from '../../api/client';
-import { Menu, X, Bell, ChevronDown, LogOut, User, Shield, Sprout } from 'lucide-react';
+import { Menu, X, Bell, ChevronDown, LogOut, User, Shield, Sprout, MessageCircle } from 'lucide-react';
 import './Navbar.css';
 
 export default function Navbar() {
@@ -59,6 +59,9 @@ export default function Navbar() {
         </Link>
 
         <div className={`navbar-links ${mobileOpen ? 'open' : ''}`}>
+          <NavLink to="/community" className="navbar-link" onClick={() => setMobileOpen(false)}>
+            Community
+          </NavLink>
           <NavLink to="/gallery" className="navbar-link" onClick={() => setMobileOpen(false)}>
             Gallery
           </NavLink>
@@ -73,9 +76,6 @@ export default function Navbar() {
               Events
             </NavLink>
           )}
-          <NavLink to="/developer" className="navbar-link" onClick={() => setMobileOpen(false)}>
-            Developer
-          </NavLink>
         </div>
 
         <div className="navbar-actions">
@@ -168,6 +168,13 @@ export default function Navbar() {
                     >
                       <Sprout size={16} /> Suggestion
                     </Link>
+                    <Link
+                      to="/messages"
+                      className="dropdown-item"
+                      onClick={() => setProfileOpen(false)}
+                    >
+                      <MessageCircle size={16} /> Messages
+                    </Link>
                     {isAdmin && (
                       <Link
                         to="/admin"
@@ -205,6 +212,9 @@ export default function Navbar() {
 
       {mobileOpen && (
         <div className="navbar-mobile animate-slide-down">
+          <NavLink to="/community" className="navbar-mobile-link" onClick={() => setMobileOpen(false)}>
+            Community
+          </NavLink>
           <NavLink to="/gallery" className="navbar-mobile-link" onClick={() => setMobileOpen(false)}>
             Gallery
           </NavLink>
@@ -219,9 +229,6 @@ export default function Navbar() {
               Events
             </NavLink>
           )}
-          <NavLink to="/developer" className="navbar-mobile-link" onClick={() => setMobileOpen(false)}>
-            Developer
-          </NavLink>
           {!isAuthenticated && (
             <div className="navbar-mobile-auth">
               <Link to="/login" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setMobileOpen(false)}>

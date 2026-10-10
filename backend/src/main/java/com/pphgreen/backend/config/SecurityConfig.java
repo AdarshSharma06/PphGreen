@@ -56,6 +56,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/gallery/*/likes").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/gallery/*/comments").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/gallery/comments/*").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/community/posts").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/community/posts/*/comments").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/community/posts").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/community/posts/json").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/community/posts/*/comments").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/community/posts/*/comments/*").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/community/members").authenticated()
+                        .requestMatchers("/api/messages/**").authenticated()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

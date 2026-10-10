@@ -12,7 +12,8 @@ import Gallery from './pages/Gallery';
 import GalleryAlbum from './pages/GalleryAlbum';
 import Programs from './pages/Programs';
 import About from './pages/About';
-import Developer from './pages/Developer';
+import Community from './pages/Community';
+import Messages from './pages/Messages';
 import Profile from './pages/Profile';
 import Notifications from './pages/Notifications';
 import Suggestion from './pages/Suggestion';
@@ -44,7 +45,8 @@ export default function App() {
               <Route path="gallery/event/:eventId" element={<><Helmet><title>Album - PPH Green</title></Helmet><GalleryAlbum /></>} />
               <Route path="programs" element={<><Helmet><title>Programs - PPH Green</title></Helmet><Programs /></>} />
               <Route path="about" element={<><Helmet><title>About Us - PPH Green</title></Helmet><About /></>} />
-              <Route path="developer" element={<><Helmet><title>Developer - PPH Green</title></Helmet><Developer /></>} />
+              <Route path="community" element={<><Helmet><title>Community - PPH Green</title></Helmet><Community /></>} />
+              <Route path="messages" element={<ProtectedRoute><Helmet><title>Messages - PPH Green</title></Helmet><Messages /></ProtectedRoute>} />
 
               <Route path="profile" element={<ProtectedRoute><Helmet><title>Profile - PPH Green</title></Helmet><Profile /></ProtectedRoute>} />
               <Route path="notifications" element={<ProtectedRoute><Helmet><title>Notifications - PPH Green</title></Helmet><Notifications /></ProtectedRoute>} />
