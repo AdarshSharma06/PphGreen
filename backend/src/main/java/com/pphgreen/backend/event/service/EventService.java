@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +42,7 @@ public class EventService {
     private final GalleryRepository galleryRepository;
     private final StorageService storageService;
 
+    @Autowired
     public EventService(EventRepository eventRepository, UserService userService,
                         CommentRepository commentRepository, ReactionRepository reactionRepository,
                         GalleryRepository galleryRepository, StorageService storageService) {
@@ -50,13 +52,6 @@ public class EventService {
         this.reactionRepository = reactionRepository;
         this.galleryRepository = galleryRepository;
         this.storageService = storageService;
-    }
-
-    // Backward compatible constructor for existing tests that mock only 4 repos
-    public EventService(EventRepository eventRepository, UserService userService,
-                        CommentRepository commentRepository, ReactionRepository reactionRepository,
-                        GalleryRepository galleryRepository) {
-        this(eventRepository, userService, commentRepository, reactionRepository, galleryRepository, null);
     }
 
     public List<EventResponse> getAllEvents() {

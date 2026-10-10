@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.pphgreen.backend.common.exception.BadRequestException;
 import com.pphgreen.backend.common.exception.UnauthorizedException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -38,6 +39,7 @@ public class GalleryService {
     private final EventRepository eventRepository;
     private final GalleryLikeRepository galleryLikeRepository;
 
+    @Autowired
     public GalleryService(GalleryRepository galleryRepository, StorageService storageService,
                           UserService userService, EventRepository eventRepository,
                           GalleryLikeRepository galleryLikeRepository) {
@@ -48,7 +50,7 @@ public class GalleryService {
         this.galleryLikeRepository = galleryLikeRepository;
     }
 
-    // Backward compatible constructor for existing tests
+    // Backward compatible constructor for existing tests (not used by Spring)
     public GalleryService(GalleryRepository galleryRepository, StorageService storageService,
                           UserService userService) {
         this(galleryRepository, storageService, userService, null, null);
