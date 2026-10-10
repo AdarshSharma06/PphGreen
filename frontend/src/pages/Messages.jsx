@@ -21,21 +21,29 @@ export default function Messages() {
   const debouncedSearch = useDebounced(search, 300);
   const [showNew, setShowNew] = useState(false);
 
-  const fetchConversations = useCallback(async () => {
+  const isFetchingRef = useRef(false);
+  const fetchConversations = useCallback(async (isPoll = false) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    if (!isPoll) setLoading(true);
     try {
       const res = await messageApi.getConversations();
       setConversations(res.data || []);
+      setError('');
     } catch (err) {
-      setError(err.message || 'Failed to load conversations');
+      if (!isPoll) setError(err.message || 'Failed to load conversations');
+      // polling failures are silent — do not clear conversations
+      console.warn('Failed to refresh conversations', err);
     } finally {
-      setLoading(false);
+      if (!isPoll) setLoading(false);
+      isFetchingRef.current = false;
     }
   }, []);
 
-  useEffect(() => { fetchConversations(); }, [fetchConversations]);
-  // polling for new messages/conversations every 5s
+  useEffect(() => { fetchConversations(false); }, [fetchConversations]);
+  // polling for new messages/conversations every 5s — independent, never clears data
   useEffect(() => {
-    const id = setInterval(() => fetchConversations(), 5000);
+    const id = setInterval(() => fetchConversations(true), 5000);
     return () => clearInterval(id);
   }, [fetchConversations]);
 
@@ -161,19 +169,20 @@ function ConversationView({ conversation, onBack, onRead, currentUserId }) {
     return () => { cancelled = true; };
   }, [conversation.id, fetchMessages, onRead]);
 
-  // polling for new messages
+  // polling for new messages — never clears existing, silent on failure
+  const isPollingRef = useRef(false);
   useEffect(() => {
     const id = setInterval(async () => {
+      if (isPollingRef.current) return;
+      isPollingRef.current = true;
       try {
         const res = await messageApi.getMessages(conversation.id, null, 30);
         const data = res.data || [];
-        // Only append new messages that are not already in list and are newer
         setMessages((prev) => {
           const existingIds = new Set(prev.map((m) => m.id));
           const newOnes = data.filter((m) => !existingIds.has(m.id));
           if (newOnes.length === 0) return prev;
           const merged = [...prev, ...newOnes].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-          // if at bottom, stay at bottom
           const container = listRef.current;
           const atBottom = container && container.scrollTop + container.clientHeight >= container.scrollHeight - 50;
           setTimeout(() => {
@@ -181,8 +190,13 @@ function ConversationView({ conversation, onBack, onRead, currentUserId }) {
           }, 50);
           return merged;
         });
+        // mark read silently
         messageApi.markRead(conversation.id).catch(() => {});
-      } catch {}
+      } catch {
+        // polling failure is silent — do not set fetchError or clear messages
+      } finally {
+        isPollingRef.current = false;
+      }
     }, 4000);
     return () => clearInterval(id);
   }, [conversation.id]);

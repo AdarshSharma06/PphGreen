@@ -126,7 +126,7 @@ public class MessageService {
         User other = c.getOtherParticipant(currentUserId);
         String otherName = other.getName() != null && !other.getName().isBlank() ? other.getName() : other.getEmail();
         CommunityPostAuthorSummary otherSummary = new CommunityPostAuthorSummary(other.getId(), otherName, other.getProfilePicture());
-        var lastOpt = messageRepository.findTopByConversationIdOrderByCreatedAtDesc(c.getId());
+        var lastOpt = messageRepository.findFirstByConversationIdOrderByCreatedAtDescIdDesc(c.getId());
         String preview = lastOpt.map(DirectMessage::getContent).orElse("");
         if (preview.length() > 60) preview = preview.substring(0, 57) + "...";
         var lastAt = lastOpt.map(DirectMessage::getCreatedAt).orElse(c.getUpdatedAt());

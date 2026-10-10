@@ -20,8 +20,7 @@ public interface DirectMessageRepository extends JpaRepository<DirectMessage, Lo
     @Query("select m from DirectMessage m join fetch m.sender join fetch m.conversation where m.conversation.id = :conversationId and m.id < :cursor order by m.id desc")
     List<DirectMessage> findByConversationIdAndIdLessThanOrderByIdDesc(@Param("conversationId") Long conversationId, @Param("cursor") Long cursor, Pageable pageable);
 
-    @Query("select m from DirectMessage m where m.conversation.id = :conversationId order by m.createdAt desc")
-    java.util.Optional<DirectMessage> findTopByConversationIdOrderByCreatedAtDesc(@Param("conversationId") Long conversationId);
+    java.util.Optional<DirectMessage> findFirstByConversationIdOrderByCreatedAtDescIdDesc(Long conversationId);
 
     long countByConversationIdAndSenderIdNotAndReadAtIsNull(Long conversationId, Long senderId);
 
