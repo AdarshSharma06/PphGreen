@@ -163,6 +163,125 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.post-card .card-body {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.post-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.post-header .avatar {
+  flex-shrink: 0;
+}
+
+.post-content {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.post-images {
+  display: grid;
+  gap: 4px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.post-images.grid-1 { grid-template-columns: 1fr; }
+.post-images.grid-2 { grid-template-columns: 1fr 1fr; }
+.post-images.grid-3 { grid-template-columns: 1fr 1fr; }
+.post-images.grid-4 { grid-template-columns: 1fr 1fr; }
+
+.post-image-item {
+  aspect-ratio: 4 / 3;
+  max-height: 240px;
+  overflow: hidden;
+  background: var(--green-50);
+  display: block;
+}
+
+.post-image-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--transition-slow);
+}
+
+.post-image-item:hover img {
+  transform: scale(1.02);
+}
+
+.post-image-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--green-50);
+  color: var(--text-muted);
+}
+
+.post-footer {
+  display: flex;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-light);
+}
+
+.member-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 32px;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+}
+
+.member-row .avatar {
+  flex-shrink: 0;
+}
+
+.member-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.member-row .btn-icon {
+  flex-shrink: 0;
+}
+
+.modal-comments {
+  max-height: 70vh;
+}
+
+.modal-comments .modal-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.comment-composer {
+  display: flex;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-light);
+  margin-top: var(--space-3);
 }
 
 @media (max-width: 1024px) {

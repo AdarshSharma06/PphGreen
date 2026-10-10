@@ -51,11 +51,15 @@ export default function Messages() {
     return () => clearInterval(id);
   }, [fetchConversations]);
 
-  const handleNewConversation = (conv) => {
+  const handleNewConversation = useCallback((conv) => {
     setShowNew(false);
     fetchConversations(false);
     setSelectedId(conv.id);
-  };
+  }, [fetchConversations]);
+
+  const handleRead = useCallback(() => {
+    fetchConversations(true);
+  }, [fetchConversations]);
 
   const filtered = conversations.filter((c) => {
     if (!debouncedSearch) return true;
@@ -98,7 +102,7 @@ export default function Messages() {
         </div>
         <div className={`conversation-panel ${!selectedId ? 'hidden-mobile' : ''}`}>
           {selected ? (
-            <ConversationView conversation={selected} onBack={() => setSelectedId(null)} onRead={() => fetchConversations(true)} currentUserId={user?.id} />
+            <ConversationView conversation={selected} onBack={() => setSelectedId(null)} onRead={handleRead} currentUserId={user?.id} />
           ) : (
             <div className="empty-conversation">
               <MessageCircle size={48} strokeWidth={1.2} />

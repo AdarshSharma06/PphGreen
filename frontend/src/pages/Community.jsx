@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { communityApi } from '../api/client';
-import { Image as ImageIcon, MessageCircle, Search, X, Users, Sprout, Plus } from 'lucide-react';
+import { Image as ImageIcon, MessageCircle, Search, X, Users, Sprout } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { messageApi } from '../api/client';
 import Modal from '../components/ui/Modal';
@@ -30,6 +30,7 @@ export default function Community() {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [showComposer, setShowComposer] = useState(false);
   const [mobileMembersOpen, setMobileMembersOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
 
   const fetchPosts = useCallback(async (cur, isInitial = false) => {
     try {
@@ -101,6 +102,10 @@ export default function Community() {
     }, 100);
   };
 
+  const handleCommentAdded = (postId) => {
+    setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, commentCount: (p.commentCount || 0) + 1 } : p));
+  };
+
   const startConversation = async (memberId) => {
     try {
       await messageApi.createConversation(memberId);
@@ -131,7 +136,7 @@ export default function Community() {
 
             <div className="posts-list">
               {posts.map((post) => (
-                <PostCard key={post.id} post={post} />
+                <PostCard key={post.id} post={post} onOpenComments={setSelectedPost} />
               ))}
             </div>
 
@@ -144,7 +149,9 @@ export default function Community() {
 
           {isAuthenticated && (
             <button className="fab" onClick={() => setShowComposer(true)} aria-label="Create post">
-              <Plus size={24} />
+              <X size={24} style={{ transform: 'rotate(45deg)' }} />
+              <span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)' }}>Create post</span>
+              <span aria-hidden="true" style={{ fontSize: 28, lineHeight: 1, marginTop: -2 }}>+</span>
             </button>
           )}
 
@@ -160,6 +167,9 @@ export default function Community() {
 
       {showComposer && (
         <CreatePostModal onClose={() => setShowComposer(false)} onCreated={(p) => { setShowComposer(false); handleNewPost(p); }} />
+      )}
+      {selectedPost && (
+        <PostCommentsDialog post={selectedPost} onClose={() => setSelectedPost(null)} onCommentAdded={() => handleCommentAdded(selectedPost.id)} />
       )}
     </div>
   );
@@ -243,91 +253,132 @@ function CreatePostModal({ onClose, onCreated }) {
   );
 }
 
-function PostCard({ post }) {
-  const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState([]);
-  const [commentText, setCommentText] = useState('');
-  const [submittingComment, setSubmittingComment] = useState(false);
-  const { isAuthenticated } = useAuth();
+function PostCard({ post, onOpenComments }) {
   const author = post.author;
-
-  const loadComments = async () => {
-    try {
-      const res = await communityApi.getComments(post.id);
-      setComments(res.data || []);
-    } catch {}
-  };
-
-  useEffect(() => {
-    if (showComments) loadComments();
-  }, [showComments]);
-
-  const handleComment = async (e) => {
-    e.preventDefault();
-    if (!commentText.trim() || submittingComment) return;
-    setSubmittingComment(true);
-    try {
-      const res = await communityApi.addComment(post.id, commentText.trim());
-      setComments((prev) => [...prev, res.data]);
-      setCommentText('');
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSubmittingComment(false);
-    }
-  };
+  const [imgFailed, setImgFailed] = useState({});
+  const handleImgError = (id) => setImgFailed((prev) => ({ ...prev, [id]: true }));
 
   return (
     <div className="post-card card">
       <div className="card-body">
         <div className="post-header">
           <div className="avatar">
-            {author.profilePicture ? <img src={author.profilePicture} alt="" /> : <span>{(author.name || '?')[0].toUpperCase()}</span>}
+            {author.profilePicture ? <img src={author.profilePicture} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }} /> : null}
+            <span style={{ display: author.profilePicture ? 'none' : 'flex' }}>{(author.name || '?')[0].toUpperCase()}</span>
+            {author.profilePicture && <span style={{ display: 'none' }}>{(author.name || '?')[0].toUpperCase()}</span>}
           </div>
-          <div>
-            <div className="font-semibold text-sm">{author.name || 'Resident'}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="font-semibold text-sm truncate">{author.name || 'Resident'}</div>
             <div className="text-xs text-muted">{new Date(post.createdAt).toLocaleString()}</div>
           </div>
         </div>
 
-        <div className="post-content" style={{ whiteSpace: 'pre-wrap', marginTop: 'var(--space-3)', lineHeight: 'var(--leading-relaxed)' }}>{post.content}</div>
+        <div className="post-content">{post.content}</div>
 
         {post.images && post.images.length > 0 && (
-          <div className={`post-images grid-${Math.min(post.images.length, 4)}`} style={{ marginTop: 'var(--space-3)' }}>
+          <div className={`post-images grid-${Math.min(post.images.length, 4)}`}>
             {post.images.map((img) => (
               <a key={img.id} href={img.fileUrl} target="_blank" rel="noopener noreferrer" className="post-image-item">
-                <img src={img.fileUrl} alt="" loading="lazy" />
+                {imgFailed[img.id] ? (
+                  <div className="post-image-fallback"><ImageIcon size={24} /></div>
+                ) : (
+                  <img src={img.fileUrl} alt="" loading="lazy" onError={() => handleImgError(img.id)} />
+                )}
               </a>
             ))}
           </div>
         )}
 
-        <div className="post-footer" style={{ marginTop: 'var(--space-3)', display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
-          <button className="btn btn-ghost btn-sm" onClick={() => setShowComments(!showComments)}>
+        <div className="post-footer">
+          <button className="btn btn-ghost btn-sm" onClick={() => onOpenComments(post)}>
             <MessageCircle size={16} /> {post.commentCount} Comments
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
 
-        {showComments && (
-          <div className="post-comments" style={{ marginTop: 'var(--space-4)', borderTop: '1px solid var(--border-light)', paddingTop: 'var(--space-3)' }}>
+function PostCommentsDialog({ post, onClose, onCommentAdded }) {
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [text, setText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const { isAuthenticated, user } = useAuth();
+  const listRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    setComments([]);
+    communityApi.getComments(post.id)
+      .then((res) => { if (!cancelled) setComments(res.data || []); })
+      .catch((err) => { if (!cancelled) setError(err.message || 'Failed to load comments'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [post.id]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!text.trim() || submitting) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await communityApi.addComment(post.id, text.trim());
+      setComments((prev) => [...prev, res.data]);
+      setText('');
+      onCommentAdded();
+      setTimeout(() => { if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight; }, 50);
+    } catch (err) {
+      setError(err.message || 'Failed to post comment');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label={`Comments for ${post.author.name}`}>
+      <div className="modal modal-comments" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <div>
+            <h3 style={{ margin: 0 }}>{post.author.name || 'Resident'}</h3>
+            <p className="text-xs text-muted" style={{ marginTop: 4, whiteSpace: 'pre-wrap', maxWidth: 400 }}>{post.content.slice(0, 120)}{post.content.length > 120 ? '…' : ''}</p>
+          </div>
+          <button className="btn-icon" onClick={onClose} aria-label="Close"><X size={18} /></button>
+        </div>
+        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', minHeight: 0, padding: 0 }}>
+          <div ref={listRef} style={{ flex: 1, overflowY: 'auto', padding: 'var(--space-4)', minHeight: 200 }}>
+            {loading && <div className="loading-container"><div className="loading-spinner" /></div>}
+            {error && <div className="alert alert-error text-sm" style={{ marginBottom: 'var(--space-2)' }}>{error} <button className="btn btn-ghost btn-sm" onClick={() => window.location.reload()}>Retry</button></div>}
+            {!loading && comments.length === 0 && !error && <div className="empty-state" style={{ padding: 'var(--space-6)' }}><MessageCircle size={32} /><p className="text-sm text-muted">No comments yet. Be the first to reply.</p></div>}
             {comments.map((c) => (
-              <div key={c.id} className="comment-item" style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
-                <div className="avatar small">{c.author.profilePicture ? <img src={c.author.profilePicture} alt="" /> : <span>{(c.author.name || '?')[0]}</span>}</div>
-                <div className="comment-bubble">
-                  <div className="font-semibold text-xs">{c.author.name}</div>
-                  <div className="text-sm">{c.content}</div>
-                  <div className="text-xs text-muted">{new Date(c.createdAt).toLocaleString()}</div>
+              <div key={c.id} className="comment-item" style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
+                <div className="avatar small" style={{ flexShrink: 0 }}>
+                  {c.author.profilePicture ? <img src={c.author.profilePicture} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : <span>{(c.author.name || '?')[0].toUpperCase()}</span>}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                    <span className="font-semibold text-sm">{c.author.name || 'Resident'}</span>
+                    <span className="text-xs text-muted">{new Date(c.createdAt).toLocaleString()}</span>
+                  </div>
+                  <div className="text-sm" style={{ marginTop: 2, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{c.content}</div>
                 </div>
               </div>
             ))}
-            {isAuthenticated ? (
-              <form onSubmit={handleComment} className="flex gap-2" style={{ marginTop: 'var(--space-3)' }}>
-                <input className="input" placeholder="Write a comment..." value={commentText} onChange={(e) => setCommentText(e.target.value)} maxLength={2000} />
-                <button className="btn btn-primary btn-sm" disabled={submittingComment || !commentText.trim()}>Reply</button>
-              </form>
-            ) : <p className="text-xs text-muted">Log in to comment</p>}
           </div>
-        )}
+          <form onSubmit={handleSubmit} className="comment-composer">
+            {isAuthenticated ? (
+              <>
+                <input className="input" placeholder="Write a comment..." value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} disabled={submitting} />
+                <button className="btn btn-primary" type="submit" disabled={submitting || !text.trim()}>{submitting ? 'Posting...' : 'Reply'}</button>
+              </>
+            ) : (
+              <p className="text-sm text-muted" style={{ width: '100%', textAlign: 'center' }}>Please log in to comment</p>
+            )}
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -339,6 +390,7 @@ function MemberDirectory({ onMessage, currentUserId, onClose }) {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [failedImgs, setFailedImgs] = useState({});
 
   useEffect(() => {
     setLoading(true);
@@ -348,6 +400,8 @@ function MemberDirectory({ onMessage, currentUserId, onClose }) {
       .catch((err) => setError(err.message || 'Failed to load members'))
       .finally(() => setLoading(false));
   }, [debounced]);
+
+  const handleImgError = (id) => setFailedImgs((prev) => ({ ...prev, [id]: true }));
 
   return (
     <div className="member-directory">
@@ -368,7 +422,11 @@ function MemberDirectory({ onMessage, currentUserId, onClose }) {
         {members.filter((m) => m.id !== currentUserId).map((m) => (
           <div key={m.id} className="member-row">
             <div className="avatar">
-              {m.profilePicture ? <img src={m.profilePicture} alt="" /> : <span>{(m.name || '?')[0].toUpperCase()}</span>}
+              {!failedImgs[m.id] && m.profilePicture ? (
+                <img src={m.profilePicture} alt="" onError={() => handleImgError(m.id)} />
+              ) : (
+                <span>{(m.name || '?')[0].toUpperCase()}</span>
+              )}
             </div>
             <div className="member-info">
               <div className="font-semibold text-sm truncate">{m.name || 'Unnamed'}</div>
