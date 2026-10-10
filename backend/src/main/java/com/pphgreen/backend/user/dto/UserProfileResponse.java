@@ -6,5 +6,6 @@ public record UserProfileResponse(
         String name,
         String tower,
         String apartmentNumber,
-        String profilePicture) {
+        String profilePicture,
+        String role) {
 }

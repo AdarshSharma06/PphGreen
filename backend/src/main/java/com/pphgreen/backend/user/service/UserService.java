@@ -81,7 +81,7 @@ public class UserService {
 
     public UserProfileResponse toProfileResponse(User user) {
         return new UserProfileResponse(user.getId(), user.getEmail(), user.getName(), user.getTower(),
-                user.getApartmentNumber(), user.getProfilePicture());
+                user.getApartmentNumber(), user.getProfilePicture(), user.getRole().name());
     }
 
     public UserPublicResponse toPublicResponse(User user) {
