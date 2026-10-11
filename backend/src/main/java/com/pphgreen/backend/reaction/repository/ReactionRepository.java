@@ -23,7 +23,9 @@ public interface ReactionRepository extends JpaRepository<Reaction, Long> {
     @Query("select r from Reaction r join fetch r.user where r.event.id = :eventId and r.user.id = :userId")
     List<Reaction> findByEventIdAndUserIdWithUser(@Param("eventId") Long eventId, @Param("userId") Long userId);
 
+    @org.springframework.data.jpa.repository.Modifying
     void deleteByEventId(Long eventId);
 
+    @org.springframework.data.jpa.repository.Modifying
     void deleteByEventIdAndUserIdAndReactionType(Long eventId, Long userId, ReactionType reactionType);
 }

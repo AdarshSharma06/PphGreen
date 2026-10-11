@@ -28,6 +28,7 @@ public interface GalleryRepository extends JpaRepository<Gallery, Long> {
 
     long countByEventIsNull();
 
+    @org.springframework.data.jpa.repository.Modifying
     void deleteByEventId(Long eventId);
 
     // For efficient album thumbnail picking, count by event

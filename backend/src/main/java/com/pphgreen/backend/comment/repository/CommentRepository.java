@@ -17,5 +17,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @Query("select c from Comment c join fetch c.author where c.id = :id")
     Optional<Comment> findWithAuthorById(@Param("id") Long id);
 
+    @org.springframework.data.jpa.repository.Modifying
     void deleteByEventId(Long eventId);
 }
